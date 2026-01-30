@@ -81,11 +81,11 @@ const characters: Character[] = [
     stats: { money: 3, reputation: 1, skill: 1, health: 14, age: 18, family: 0 },
   },
   {
-    id: 'clerk',
-    name: 'Писар',
-    description: 'Невеликі гроші й репутація, низька сила.',
-    lore: 'Ти знаєш літери й рахунки. У місті тебе поважають, але вулиця не пробачає слабкості.',
-    stats: { money: 5, reputation: 4, skill: 1, health: 9, age: 19, family: 0 },
+    id: 'farmer',
+    name: 'Селянин',
+    description: 'Звик до важкої праці, мало грошей, але міцне здоровʼя.',
+    lore: 'Ти виріс на землі та звик до важкої праці. Вмієш витримувати труднощі, але багатства не маєш.',
+    stats: { money: 3, reputation: 2, skill: 2, health: 12, age: 20, family: 0 },
   },
 ];
 
