@@ -840,13 +840,63 @@ const getChance = (choice: Choice, stats: Stats) => {
   return clamp(choice.baseChance + modifier, 0.1, 0.95);
 };
 
-const getEnding = (stats: Stats, stage: Stage) => {
-  if (stats.health <= 0) return 'Ти помираєш від виснаження та травм.';
-  if (stage === 'Noble') return 'Ти завершуєш життя шляхтичем із впливом.';
-  if (stage === 'Established')
-    return 'Ти завершуєш життя шанованим землевласником або купцем.';
-  if (stage === 'Rising') return 'Ти завершуєш життя здібним вояком або майстром.';
-  return 'Ти помираєш бідним і майже забутим.';
+const getEnding = (stats: Stats, reason: string) => {
+  if (stats.health <= 0) {
+    return {
+      title: 'Смерть',
+      text: `${reason} Ти помираєш від виснаження та травм.`,
+    };
+  }
+
+  if (stats.money >= 55 && stats.reputation >= 35) {
+    return {
+      title: 'Феодал',
+      text: `${reason} Ти завершуєш життя впливовим феодалом із землею та владою.`,
+    };
+  }
+  if (stats.money >= 35 && stats.reputation >= 15) {
+    return {
+      title: 'Купець',
+      text: `${reason} Ти стаєш заможним купцем із власною справою.`,
+    };
+  }
+  if (stats.skill >= 12 && stats.reputation >= 12) {
+    return {
+      title: 'Лицар',
+      text: `${reason} Ти здобуваєш славу і завершуєш життя як лицар або воїн.`,
+    };
+  }
+  if (stats.reputation >= 18 && stats.money <= 10) {
+    return {
+      title: 'Монах',
+      text: `${reason} Ти відходиш від мирського й стаєш монахом.`,
+    };
+  }
+
+  const best = Math.max(stats.money, stats.skill, stats.reputation);
+  if (best === stats.money) {
+    return {
+      title: 'Купець',
+      text: `${reason} Ти йдеш шляхом торгівлі й стаєш купцем.`,
+    };
+  }
+  if (best === stats.skill) {
+    return {
+      title: 'Лицар',
+      text: `${reason} Твоя сила веде тебе шляхом воїна.`,
+    };
+  }
+  if (best === stats.reputation) {
+    return {
+      title: 'Монах',
+      text: `${reason} Ти обираєш служіння й тишу.`,
+    };
+  }
+
+  return {
+    title: 'Смерть',
+    text: `${reason} Ти помираєш бідним і майже забутим.`,
+  };
 };
 
 export default function HomeScreen() {
@@ -863,6 +913,7 @@ export default function HomeScreen() {
     return next?.scene ?? initialSceneDeck[0];
   });
   const [gameOver, setGameOver] = useState(false);
+  const [endingReason, setEndingReason] = useState<string>('');
   const [screen, setScreen] = useState<'start' | 'choose' | 'game'>('start');
   const [result, setResult] = useState<{
     title: string;
@@ -921,11 +972,19 @@ export default function HomeScreen() {
     }
 
     let lifeOver = nextStats.health <= 0 || nextTurn > MAX_TURNS;
+    if (nextStats.health <= 0) {
+      setEndingReason(
+        'Твоє здоровʼя впало до нуля через виснаження, травми та наслідки рішень.'
+      );
+    } else if (nextTurn > MAX_TURNS) {
+      setEndingReason('Твоє життя добігло кінця після повного циклу ходів.');
+    }
     const nextScenePick = lifeOver
       ? null
       : getNextScene(sceneDeck, sceneIndex + 1, nextStage);
     if (!lifeOver && !nextScenePick) {
       lifeOver = true;
+      setEndingReason('Історії закінчилися — твоє життя завершилось без нових шансів.');
     }
     const nextScene = nextScenePick?.scene ?? scene;
 
@@ -987,6 +1046,7 @@ export default function HomeScreen() {
     setEventIndex(0);
     setSelectedCharacter(null);
     setDetailCharacter(null);
+    setEndingReason('');
   };
 
   if (screen === 'start') {
@@ -1049,7 +1109,7 @@ export default function HomeScreen() {
                 const active = item.id === selectedCharacter?.id;
                 return (
                   <Pressable
-                    onPress={() => setDetailCharacter(item)}
+                    onPress={() => setSelectedCharacter(item)}
                     style={[
                       styles.characterCard,
                       { width: cardWidth, marginRight: cardGap },
@@ -1150,7 +1210,17 @@ export default function HomeScreen() {
           <ThemedText style={styles.sceneText}>{scene.text}</ThemedText>
           {gameOver ? (
             <View style={styles.ending}>
-              <ThemedText type="defaultSemiBold">{getEnding(stats, stage)}</ThemedText>
+              {(() => {
+                const ending = getEnding(stats, endingReason);
+                return (
+                  <>
+                    <ThemedText type="defaultSemiBold" style={styles.endingTitle}>
+                      {ending.title}
+                    </ThemedText>
+                    <ThemedText>{ending.text}</ThemedText>
+                  </>
+                );
+              })()}
               <Pressable onPress={resetLife} style={styles.primaryButton}>
                 <ThemedText style={styles.primaryButtonText}>Почати інше життя</ThemedText>
               </Pressable>
@@ -1370,6 +1440,9 @@ const styles = StyleSheet.create({
   },
   ending: {
     gap: 12,
+  },
+  endingTitle: {
+    fontSize: 18,
   },
   primaryButton: {
     alignSelf: 'flex-start',
