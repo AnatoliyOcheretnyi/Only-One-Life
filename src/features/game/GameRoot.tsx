@@ -14,6 +14,7 @@ import { ThemedText } from "@/src/components/themed-text";
 import { ThemedView } from "@/src/components/themed-view";
 
 import Delta from "@/src/features/game/components/Delta";
+import LeavesSkia from "@/src/features/game/components/LeavesSkia";
 import RainSkia from "@/src/features/game/components/RainSkia";
 import SnowSkia from "@/src/features/game/components/SnowSkia";
 import StatInline from "@/src/features/game/components/StatInline";
@@ -22,7 +23,7 @@ import StatRow from "@/src/features/game/components/StatRow";
 import { characters } from "@/src/features/game/data/characters";
 import { events } from "@/src/features/game/data/events";
 import { scenes } from "@/src/features/game/data/scenes";
-import { EFFECT_TEXTURES, effectFromText, snowIntensityFromText } from "@/src/features/game/effects";
+import { effectFromText, snowIntensityFromText } from "@/src/features/game/effects";
 import { styles } from "@/src/features/game/styles";
 import {
   BASE_UPKEEP,
@@ -209,7 +210,6 @@ export default function HomeScreen() {
   const [eventIndex, setEventIndex] = useState(0);
   const characterListRef = useRef<FlatList<Character>>(null);
   const characterScrollX = useRef(new Animated.Value(0)).current;
-  const effectShift = useRef(new Animated.Value(0)).current;
   const [detailCharacter, setDetailCharacter] = useState<Character | null>(
     null,
   );
@@ -258,25 +258,6 @@ export default function HomeScreen() {
       setStats((prev) => normalizeStats(prev));
     }
   }, [stats.luck]);
-
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(effectShift, {
-          toValue: 1,
-          duration: 7000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(effectShift, {
-          toValue: 0,
-          duration: 7000,
-          useNativeDriver: true,
-        }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [effectShift]);
 
   useEffect(() => {
     const sceneEffect = effectFromText(`${scene.title} ${scene.text}`) as
@@ -519,7 +500,7 @@ export default function HomeScreen() {
     setEventIndex(0);
     setGameOver(false);
     setResult(null);
-    setEffectType("snow");
+    setEffectType("leaves");
     setEffectUntilTurn(999);
     setSnowIntensity("gentle");
     setScreen("game");
@@ -553,7 +534,7 @@ export default function HomeScreen() {
     setEventIndex(0);
     setDetailCharacter(null);
     setEndingReason("");
-    setEffectType("snow");
+    setEffectType("leaves");
     setEffectUntilTurn(999);
     setSnowIntensity("gentle");
   };
@@ -956,49 +937,7 @@ export default function HomeScreen() {
               intensity={snowIntensity}
             />
           ) : (
-            <>
-              <Animated.Image
-                source={EFFECT_TEXTURES[effectType]}
-                style={[
-                  styles.weatherLayer,
-                  {
-                    opacity: effectType === "leaves" ? 0.7 : 0.32,
-                    transform: [
-                      {
-                        translateX: effectShift.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: effectType === "leaves" ? [-25, 25] : [-10, 10],
-                        }),
-                      },
-                      {
-                        translateY: effectShift.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: effectType === "leaves" ? [-60, 140] : [-10, 10],
-                        }),
-                      },
-                    ],
-                  },
-                ]}
-              />
-              <Animated.Image
-                source={EFFECT_TEXTURES[effectType]}
-                style={[
-                  styles.weatherLayer,
-                  {
-                    opacity: effectType === "leaves" ? 0.5 : 0.22,
-                    transform: [
-                      { translateX: effectType === "leaves" ? 16 : 30 },
-                      {
-                        translateY: effectShift.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: effectType === "leaves" ? [-40, 120] : [-6, 6],
-                        }),
-                      },
-                    ],
-                  },
-                ]}
-              />
-            </>
+            <LeavesSkia width={weatherWidth} height={weatherHeight} />
           )}
         </View>
       ) : null}
