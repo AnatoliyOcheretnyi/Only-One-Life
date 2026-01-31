@@ -2084,11 +2084,11 @@ const defaultStats: Stats = {
 const getChance = (choice: Choice, stats: Stats) => {
   const penalty = stats.money < 0 ? Math.abs(stats.money) * 0.01 : 0;
   const modifier =
-    stats.skill * 0.03 +
-    stats.reputation * 0.02 +
+    stats.skill * 0.04 +
+    stats.reputation * 0.015 +
     stats.health * 0.01 -
-    stats.money * 0.005 -
-    stats.fatigue * 0.02 -
+    stats.money * 0.003 -
+    stats.fatigue * 0.03 -
     penalty;
   return clamp(choice.baseChance + modifier, 0.1, 0.95);
 };
@@ -2196,7 +2196,12 @@ export default function HomeScreen() {
     const chance = chanceMap[choice.id];
     const success = Math.random() < chance;
     const effects = success ? choice.success : choice.fail;
-    const afterChoice = applyEffects(stats, effects);
+    const adjustedEffects = { ...effects };
+    if (success && adjustedEffects.money && adjustedEffects.money > 0) {
+      const bonus = Math.min(2, Math.floor(stats.skill / 5));
+      adjustedEffects.money += bonus;
+    }
+    const afterChoice = applyEffects(stats, adjustedEffects);
     const upkeep = BASE_UPKEEP - afterChoice.family;
     const upkeepEffects: Effects = { money: upkeep };
     const nextStats = applyEffects(afterChoice, upkeepEffects);
@@ -2293,8 +2298,8 @@ export default function HomeScreen() {
       title: success ? 'Успіх' : 'Невдача',
       text: resultText,
       deltas: {
-        ...effects,
-        money: (effects.money ?? 0) + upkeep,
+        ...adjustedEffects,
+        money: (adjustedEffects.money ?? 0) + upkeep,
         hungerDebt: hungerDelta,
         fatigue: fatigueDelta,
       },
