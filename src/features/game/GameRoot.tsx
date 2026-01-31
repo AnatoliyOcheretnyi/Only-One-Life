@@ -157,6 +157,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
   const [currentCharacterIndex, setCurrentCharacterIndex] = useState(0);
+  const [statsExpanded, setStatsExpanded] = useState(false);
   const [stats, setStats] = useState<Stats>(defaultStats);
   const [turn, setTurn] = useState(1);
   const [log, setLog] = useState<string[]>([]);
@@ -199,6 +200,29 @@ export default function HomeScreen() {
 
   const rollInitialLuck = () => Math.floor(Math.random() * 5);
   const safeStats = normalizeStats(stats);
+  const statLabels = statsExpanded
+    ? {
+        money: 'Гроші',
+        reputation: 'Репутація',
+        skill: 'Сила',
+        health: 'Здоровʼя',
+        hungerDebt: 'Голод',
+        fatigue: 'Втома',
+        luck: 'Удача',
+        age: 'Вік',
+        family: 'Сімʼя',
+      }
+    : {
+        money: '💰',
+        reputation: '⭐',
+        skill: '💪',
+        health: '❤️',
+        hungerDebt: '🍗',
+        fatigue: '😮‍💨',
+        luck: '🍀',
+        age: '⏳',
+        family: '👪',
+      };
 
   useEffect(() => {
     if (!Number.isFinite(stats.luck)) {
@@ -677,20 +701,29 @@ export default function HomeScreen() {
     <View style={styles.gameScreen}>
       <ScrollView contentContainerStyle={styles.screen} showsVerticalScrollIndicator={false}>
       <ThemedView style={styles.header}>
-        <ThemedText type="defaultSemiBold" style={styles.headerSubtitle}>
-          Хід {Math.min(turn, MAX_TURNS)} / {MAX_TURNS} · Етап: {stageUa[stage]} ·{' '}
-          {seasonUa[season]} · До наступної: {turnsToNextSeason}
-        </ThemedText>
+        <View style={styles.headerRow}>
+          <ThemedText type="defaultSemiBold" style={styles.headerSubtitle}>
+            Хід {Math.min(turn, MAX_TURNS)} / {MAX_TURNS} · Етап: {stageUa[stage]} ·{' '}
+            {seasonUa[season]} · До наступної: {turnsToNextSeason}
+          </ThemedText>
+          <Pressable
+            onPress={() => setStatsExpanded((prev) => !prev)}
+            style={styles.headerToggle}>
+            <ThemedText style={styles.headerToggleText}>
+              {statsExpanded ? 'Згорнути' : 'Розгорнути'}
+            </ThemedText>
+          </Pressable>
+        </View>
         <View style={styles.statsHeader}>
-          <StatInline label="Гроші" value={stats.money} />
-          <StatInline label="Репутація" value={stats.reputation} />
-          <StatInline label="Сила" value={stats.skill} />
-          <StatInline label="Здоровʼя" value={stats.health} />
-          <StatInline label="Голод" value={stats.hungerDebt} />
-          <StatInline label="Втома" value={stats.fatigue} />
-          <StatInline label="Удача" value={stats.luck} />
-          <StatInline label="Вік" value={stats.age} />
-          <StatInline label="Сімʼя" value={stats.family} />
+          <StatInline label={statLabels.money} value={stats.money} />
+          <StatInline label={statLabels.reputation} value={stats.reputation} />
+          <StatInline label={statLabels.skill} value={stats.skill} />
+          <StatInline label={statLabels.health} value={stats.health} />
+          <StatInline label={statLabels.hungerDebt} value={stats.hungerDebt} />
+          <StatInline label={statLabels.fatigue} value={stats.fatigue} />
+          <StatInline label={statLabels.luck} value={stats.luck} />
+          <StatInline label={statLabels.age} value={stats.age} />
+          <StatInline label={statLabels.family} value={stats.family} />
         </View>
       </ThemedView>
       {selectedCharacter ? (

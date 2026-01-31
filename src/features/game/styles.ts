@@ -20,11 +20,31 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(216,179,106,0.45)',
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
   headerTitle: {
     color: '#F6E7C8',
   },
   headerSubtitle: {
     color: 'rgba(246,231,200,0.8)',
+    flex: 1,
+  },
+  headerToggle: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  headerToggleText: {
+    color: '#F6E7C8',
+    fontSize: 11,
+    fontWeight: '600',
   },
   statsHeader: {
     flexDirection: 'row',
