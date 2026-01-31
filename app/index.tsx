@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
@@ -13,6 +13,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+
+const EFFECT_TEXTURES = {
+  rain: require('../assets/images/effects/rain.png'),
+  snow: require('../assets/images/effects/snow.png'),
+  leaves: require('../assets/images/effects/leaves.png'),
+};
 
 type Stats = {
   money: number;
@@ -2131,6 +2137,14 @@ const stageUa: Record<Stage, string> = {
   Noble: 'Шляхта',
 };
 
+const effectFromText = (text: string) => {
+  const lower = text.toLowerCase();
+  if (lower.includes('буря') || lower.includes('дощ') || lower.includes('повін')) return 'rain';
+  if (lower.includes('сніг') || lower.includes('зим') || lower.includes('холод')) return 'snow';
+  if (lower.includes('лист') || lower.includes('осін') || lower.includes('вітер')) return 'leaves';
+  return null;
+};
+
 const applyEffects = (stats: Stats, effects: Effects): Stats => ({
   money: stats.money + (effects.money ?? 0),
   reputation: stats.reputation + (effects.reputation ?? 0),
@@ -2306,10 +2320,44 @@ export default function HomeScreen() {
   const [eventIndex, setEventIndex] = useState(0);
   const characterListRef = useRef<FlatList<Character>>(null);
   const characterScrollX = useRef(new Animated.Value(0)).current;
+  const effectShift = useRef(new Animated.Value(0)).current;
   const [detailCharacter, setDetailCharacter] = useState<Character | null>(null);
   const [choiceDetail, setChoiceDetail] = useState<{ choice: Choice; chance: number } | null>(
     null
   );
+  const [effectType, setEffectType] = useState<'rain' | 'snow' | 'leaves' | null>(null);
+  const [effectUntilTurn, setEffectUntilTurn] = useState<number>(0);
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(effectShift, {
+          toValue: 1,
+          duration: 7000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(effectShift, {
+          toValue: 0,
+          duration: 7000,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [effectShift]);
+
+  useEffect(() => {
+    const sceneEffect = effectFromText(`${scene.title} ${scene.text}`) as
+      | 'rain'
+      | 'snow'
+      | 'leaves'
+      | null;
+    if (sceneEffect && (!effectType || turn > effectUntilTurn)) {
+      setEffectType(sceneEffect);
+      setEffectUntilTurn(turn + 1);
+    }
+  }, [scene, turn, effectType, effectUntilTurn]);
 
   const chanceMap = useMemo(() => {
     return scene.choices.reduce<Record<string, number>>((acc, choice) => {
@@ -2360,6 +2408,31 @@ export default function HomeScreen() {
         `Подія: ${currentEvent.title}. ${currentEvent.text}`,
         ...prev,
       ].slice(0, 6));
+    }
+
+    let newEffect: 'rain' | 'snow' | 'leaves' | null = null;
+    if (eventResult) {
+      newEffect = effectFromText(`${eventResult.title} ${eventResult.text}`) as
+        | 'rain'
+        | 'snow'
+        | 'leaves'
+        | null;
+    }
+    if (!newEffect) {
+      newEffect = effectFromText(`${scene.title} ${scene.text}`) as
+        | 'rain'
+        | 'snow'
+        | 'leaves'
+        | null;
+    }
+    if (!newEffect && nextTurn % 5 === 0) {
+      newEffect = 'leaves';
+    }
+    if (newEffect) {
+      setEffectType(newEffect);
+      setEffectUntilTurn(nextTurn + (eventResult ? 2 : 1));
+    } else if (effectType && nextTurn > effectUntilTurn) {
+      setEffectType(null);
     }
 
     const beforeHunger = nextStats.hungerDebt;
@@ -2454,6 +2527,8 @@ export default function HomeScreen() {
     setEventIndex(0);
     setGameOver(false);
     setResult(null);
+    setEffectType(null);
+    setEffectUntilTurn(0);
     setScreen('game');
   };
 
@@ -2480,6 +2555,8 @@ export default function HomeScreen() {
     setEventIndex(0);
     setDetailCharacter(null);
     setEndingReason('');
+    setEffectType(null);
+    setEffectUntilTurn(0);
   };
 
   const exitToStart = () => {
@@ -2781,6 +2858,101 @@ export default function HomeScreen() {
         </ThemedView>
       </ThemedView>
       </ScrollView>
+      {effectType ? (
+        <View pointerEvents="none" style={styles.weatherOverlay}>
+          <View
+            style={[
+              styles.weatherTint,
+              {
+                backgroundColor:
+                  effectType === 'snow'
+                    ? 'transparent'
+                    : effectType === 'rain'
+                      ? 'rgba(40,70,110,0.08)'
+                      : effectType === 'leaves'
+                        ? 'transparent'
+                      : 'rgba(220,220,220,0.08)',
+              },
+            ]}
+          />
+          <Animated.Image
+            source={EFFECT_TEXTURES[effectType]}
+            style={[
+              styles.weatherLayer,
+              {
+                tintColor: effectType === 'snow' ? '#FFFFFF' : undefined,
+                opacity:
+                  effectType === 'rain'
+                    ? 0.28
+                    : effectType === 'snow'
+                      ? 1
+                      : effectType === 'leaves'
+                        ? 0.7
+                        : 0.32,
+                transform: [
+                  {
+                    translateX: effectShift.interpolate({
+                      inputRange: [0, 1],
+                      outputRange:
+                        effectType === 'leaves'
+                          ? [-25, 25]
+                          : effectType === 'snow'
+                            ? [-20, 20]
+                            : [-10, 10],
+                    }),
+                  },
+                  {
+                    translateY: effectShift.interpolate({
+                      inputRange: [0, 1],
+                      outputRange:
+                        effectType === 'rain'
+                          ? [-80, 80]
+                          : effectType === 'snow'
+                            ? [-30, 30]
+                            : effectType === 'leaves'
+                              ? [-60, 140]
+                              : [-10, 10],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          />
+          <Animated.Image
+            source={EFFECT_TEXTURES[effectType]}
+            style={[
+              styles.weatherLayer,
+              {
+                tintColor: effectType === 'snow' ? '#FFFFFF' : undefined,
+                opacity:
+                  effectType === 'rain'
+                    ? 0.18
+                    : effectType === 'snow'
+                      ? 1
+                      : effectType === 'leaves'
+                        ? 0.5
+                        : 0.22,
+                transform: [
+                  { translateX: effectType === 'leaves' ? 16 : 30 },
+                  {
+                    translateY: effectShift.interpolate({
+                      inputRange: [0, 1],
+                      outputRange:
+                        effectType === 'rain'
+                          ? [-60, 60]
+                          : effectType === 'snow'
+                            ? [-20, 20]
+                            : effectType === 'leaves'
+                              ? [-40, 120]
+                              : [-6, 6],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          />
+        </View>
+      ) : null}
       {result ? (
         <View style={styles.resultOverlay}>
           <View style={styles.resultCard}>
@@ -3353,5 +3525,24 @@ const styles = StyleSheet.create({
   },
   primaryButtonDisabled: {
     opacity: 0.5,
+  },
+  weatherOverlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    left: 0,
+    height: 520,
+    zIndex: 1,
+  },
+  weatherTint: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  weatherLayer: {
+    position: 'absolute',
+    top: -40,
+    left: -40,
+    width: '120%',
+    height: '120%',
+    resizeMode: 'cover',
   },
 });
