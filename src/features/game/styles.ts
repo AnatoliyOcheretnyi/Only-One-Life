@@ -412,6 +412,9 @@ export const styles = StyleSheet.create({
     color: '#F6E7C8',
     fontWeight: '600',
   },
+  choiceList: {
+    gap: 10,
+  },
   miniStat: {
     gap: 2,
   },

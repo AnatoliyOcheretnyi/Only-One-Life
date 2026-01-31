@@ -11,3 +11,17 @@ export const effectFromText = (text: string) => {
   if (lower.includes('лист') || lower.includes('осін') || lower.includes('вітер')) return 'leaves';
   return null;
 };
+
+export const snowIntensityFromText = (text: string) => {
+  const lower = text.toLowerCase();
+  if (
+    lower.includes('замет') ||
+    lower.includes('хуртов') ||
+    lower.includes('сніжна буря') ||
+    lower.includes('завірю') ||
+    lower.includes('буря')
+  ) {
+    return 'blizzard' as const;
+  }
+  return 'gentle' as const;
+};

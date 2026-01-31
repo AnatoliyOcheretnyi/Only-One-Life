@@ -15,13 +15,14 @@ import { ThemedView } from "@/src/components/themed-view";
 
 import Delta from "@/src/features/game/components/Delta";
 import RainSkia from "@/src/features/game/components/RainSkia";
+import SnowSkia from "@/src/features/game/components/SnowSkia";
 import StatInline from "@/src/features/game/components/StatInline";
 import StatPill from "@/src/features/game/components/StatPill";
 import StatRow from "@/src/features/game/components/StatRow";
 import { characters } from "@/src/features/game/data/characters";
 import { events } from "@/src/features/game/data/events";
 import { scenes } from "@/src/features/game/data/scenes";
-import { EFFECT_TEXTURES, effectFromText } from "@/src/features/game/effects";
+import { EFFECT_TEXTURES, effectFromText, snowIntensityFromText } from "@/src/features/game/effects";
 import { styles } from "@/src/features/game/styles";
 import {
   BASE_UPKEEP,
@@ -220,6 +221,9 @@ export default function HomeScreen() {
     "rain" | "snow" | "leaves" | null
   >(null);
   const [effectUntilTurn, setEffectUntilTurn] = useState<number>(0);
+  const [snowIntensity, setSnowIntensity] = useState<"gentle" | "blizzard">(
+    "gentle",
+  );
 
   const rollInitialLuck = () => Math.floor(Math.random() * 5);
   const safeStats = normalizeStats(stats);
@@ -283,6 +287,11 @@ export default function HomeScreen() {
     if (sceneEffect && (!effectType || turn > effectUntilTurn)) {
       setEffectType(sceneEffect);
       setEffectUntilTurn(turn + 1);
+      if (sceneEffect === "snow") {
+        setSnowIntensity(
+          snowIntensityFromText(`${scene.title} ${scene.text}`),
+        );
+      }
     }
   }, [scene, turn, effectType, effectUntilTurn]);
 
@@ -363,6 +372,12 @@ export default function HomeScreen() {
     if (newEffect) {
       setEffectType(newEffect);
       setEffectUntilTurn(nextTurn + (eventResult ? 2 : 1));
+      if (newEffect === "snow") {
+        const sourceText = eventResult
+          ? `${eventResult.title} ${eventResult.text}`
+          : `${scene.title} ${scene.text}`;
+        setSnowIntensity(snowIntensityFromText(sourceText));
+      }
     } else if (effectType && nextTurn > effectUntilTurn) {
       setEffectType(null);
     }
@@ -504,8 +519,9 @@ export default function HomeScreen() {
     setEventIndex(0);
     setGameOver(false);
     setResult(null);
-    setEffectType("rain");
+    setEffectType("snow");
     setEffectUntilTurn(999);
+    setSnowIntensity("gentle");
     setScreen("game");
   };
 
@@ -537,8 +553,9 @@ export default function HomeScreen() {
     setEventIndex(0);
     setDetailCharacter(null);
     setEndingReason("");
-    setEffectType("rain");
+    setEffectType("snow");
     setEffectUntilTurn(999);
+    setSnowIntensity("gentle");
   };
 
   const exitToStart = () => {
@@ -932,6 +949,12 @@ export default function HomeScreen() {
           <View style={styles.weatherTint} />
           {effectType === "rain" ? (
             <RainSkia width={weatherWidth} height={weatherHeight} />
+          ) : effectType === "snow" ? (
+            <SnowSkia
+              width={weatherWidth}
+              height={weatherHeight}
+              intensity={snowIntensity}
+            />
           ) : (
             <>
               <Animated.Image
@@ -939,34 +962,18 @@ export default function HomeScreen() {
                 style={[
                   styles.weatherLayer,
                   {
-                    tintColor: effectType === "snow" ? "#FFFFFF" : undefined,
-                    opacity:
-                      effectType === "snow"
-                        ? 1
-                        : effectType === "leaves"
-                          ? 0.7
-                          : 0.32,
+                    opacity: effectType === "leaves" ? 0.7 : 0.32,
                     transform: [
                       {
                         translateX: effectShift.interpolate({
                           inputRange: [0, 1],
-                          outputRange:
-                            effectType === "leaves"
-                              ? [-25, 25]
-                              : effectType === "snow"
-                                ? [-20, 20]
-                                : [-10, 10],
+                          outputRange: effectType === "leaves" ? [-25, 25] : [-10, 10],
                         }),
                       },
                       {
                         translateY: effectShift.interpolate({
                           inputRange: [0, 1],
-                          outputRange:
-                            effectType === "snow"
-                              ? [-30, 30]
-                              : effectType === "leaves"
-                                ? [-60, 140]
-                                : [-10, 10],
+                          outputRange: effectType === "leaves" ? [-60, 140] : [-10, 10],
                         }),
                       },
                     ],
@@ -978,24 +985,13 @@ export default function HomeScreen() {
                 style={[
                   styles.weatherLayer,
                   {
-                    tintColor: effectType === "snow" ? "#FFFFFF" : undefined,
-                    opacity:
-                      effectType === "snow"
-                        ? 1
-                        : effectType === "leaves"
-                          ? 0.5
-                          : 0.22,
+                    opacity: effectType === "leaves" ? 0.5 : 0.22,
                     transform: [
                       { translateX: effectType === "leaves" ? 16 : 30 },
                       {
                         translateY: effectShift.interpolate({
                           inputRange: [0, 1],
-                          outputRange:
-                            effectType === "snow"
-                              ? [-20, 20]
-                              : effectType === "leaves"
-                                ? [-40, 120]
-                                : [-6, 6],
+                          outputRange: effectType === "leaves" ? [-40, 120] : [-6, 6],
                         }),
                       },
                     ],
