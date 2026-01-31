@@ -21,6 +21,7 @@ type Stats = {
   health: number;
   age: number;
   family: number;
+  hungerDebt: number;
 };
 
 type Effects = Partial<Stats>;
@@ -74,7 +75,7 @@ const characters: Character[] = [
     name: 'Вуличний сирота',
     description: 'Витривалий, але без грошей і звʼязків.',
     lore: 'Ти виріс на холодних вулицях і навчився виживати без підтримки. Твої навички грубі, але надійні.',
-    stats: { money: 2, reputation: 1, skill: 2, health: 12, age: 16, family: 0 },
+    stats: { money: 2, reputation: 1, skill: 2, health: 12, age: 16, family: 0, hungerDebt: 0 },
     image: require('../src/assets/charecters/syrota.png'),
   },
   {
@@ -82,7 +83,7 @@ const characters: Character[] = [
     name: 'Учень майстра',
     description: 'Трохи вмінь та помірна репутація.',
     lore: 'Ти бачив ремесло зблизька, але справжня майстерність ще попереду. Люди ставляться до тебе з обережною повагою.',
-    stats: { money: 4, reputation: 3, skill: 3, health: 10, age: 17, family: 0 },
+    stats: { money: 4, reputation: 3, skill: 3, health: 10, age: 17, family: 0, hungerDebt: 0 },
     image: require('../src/assets/charecters/uchen.png'),
   },
   {
@@ -90,7 +91,7 @@ const characters: Character[] = [
     name: 'Біженець',
     description: 'Мало грошей, але сильне здоровʼя.',
     lore: 'Після втечі від війни ти втратив дім, але зберіг витривалість. Ти не маєш звʼязків, зате маєш силу.',
-    stats: { money: 3, reputation: 1, skill: 1, health: 14, age: 18, family: 0 },
+    stats: { money: 3, reputation: 1, skill: 1, health: 14, age: 18, family: 0, hungerDebt: 0 },
     image: require('../src/assets/charecters/bizhenec.png'),
   },
   {
@@ -98,7 +99,7 @@ const characters: Character[] = [
     name: 'Селянин',
     description: 'Звик до важкої праці, мало грошей, але міцне здоровʼя.',
     lore: 'Ти виріс на землі та звик до важкої праці. Вмієш витримувати труднощі, але багатства не маєш.',
-    stats: { money: 3, reputation: 2, skill: 2, health: 12, age: 20, family: 0 },
+    stats: { money: 3, reputation: 2, skill: 2, health: 12, age: 20, family: 0, hungerDebt: 0 },
     image: require('../src/assets/charecters/selianyn.png'),
   },
 ];
@@ -722,6 +723,243 @@ const scenes: Scene[] = [
       },
     ],
   },
+  {
+    id: 'blacksmith-yard',
+    title: 'Кузня',
+    text: 'Коваль шукає помічника на день.',
+    choices: [
+      {
+        id: 'forge-help',
+        label: 'Допомагати в кузні',
+        description: 'Втомлює, але дає гроші й силу.',
+        baseChance: 0.75,
+        successText: 'Ти витримуєш гарячий день і отримуєш платню.',
+        failText: 'Ти обпікаєшся і йдеш раніше.',
+        success: { money: 3, skill: 1 },
+        fail: { health: -2 },
+      },
+      {
+        id: 'learn-craft',
+        label: 'Просити навчити ремеслу',
+        description: 'Шанс на навички.',
+        baseChance: 0.5,
+        successText: 'Коваль показує основи.',
+        failText: 'Коваль відмовляє.',
+        success: { skill: 2, reputation: 1 },
+        fail: { reputation: -1 },
+      },
+      {
+        id: 'sell-charcoal',
+        label: 'Продавати вугілля',
+        description: 'Невеликий прибуток.',
+        baseChance: 0.8,
+        successText: 'Ти продаєш кілька мішків.',
+        failText: 'Покупців мало.',
+        success: { money: 2 },
+        fail: {},
+      },
+      {
+        id: 'leave-forge',
+        label: 'Піти далі',
+        description: 'Без змін.',
+        baseChance: 1,
+        successText: 'Ти не затримуєшся.',
+        failText: 'Ти не затримуєшся.',
+        success: {},
+        fail: {},
+      },
+    ],
+  },
+  {
+    id: 'winter-cold',
+    title: 'Зимовий холод',
+    text: 'Ночі холодні, дах потрібен більше ніж будь-коли.',
+    choices: [
+      {
+        id: 'rent-corner',
+        label: 'Орендувати куток',
+        description: 'Безпечно, але дорого.',
+        baseChance: 0.9,
+        successText: 'Ти грієшся і набираєшся сил.',
+        failText: 'Ти не знаходиш місця.',
+        success: { money: -2, health: 2 },
+        fail: { health: -2 },
+      },
+      {
+        id: 'share-fire',
+        label: 'Поділити вогонь',
+        description: 'Шанс на доброзичливість.',
+        baseChance: 0.6,
+        successText: 'Тебе приймають до вогню.',
+        failText: 'Тебе проганяють.',
+        success: { reputation: 1, health: 1 },
+        fail: { health: -1 },
+      },
+      {
+        id: 'work-night',
+        label: 'Працювати вночі',
+        description: 'Заробіток ціною виснаження.',
+        baseChance: 0.5,
+        successText: 'Ти заробляєш, але виснажуєшся.',
+        failText: 'Ти змерзаєш і втрачаєш сили.',
+        success: { money: 3, health: -1 },
+        fail: { health: -2 },
+      },
+      {
+        id: 'endure-cold',
+        label: 'Терпіти',
+        description: 'Без витрат, але ризик.',
+        baseChance: 0.4,
+        successText: 'Ти переживаєш ніч.',
+        failText: 'Ти захворюєш.',
+        success: {},
+        fail: { health: -3 },
+      },
+    ],
+  },
+  {
+    id: 'harvest-day',
+    title: 'Жнива',
+    text: 'Селяни шукають робочих рук.',
+    choices: [
+      {
+        id: 'join-harvest',
+        label: 'Піти на жнива',
+        description: 'Стабільний заробіток.',
+        baseChance: 0.85,
+        successText: 'Ти працюєш цілий день і отримуєш платню.',
+        failText: 'Ти не витримуєш темпу.',
+        success: { money: 3 },
+        fail: { health: -1 },
+      },
+      {
+        id: 'collect-leftovers',
+        label: 'Збирати залишки',
+        description: 'Мало грошей, трохи їжі.',
+        baseChance: 0.9,
+        successText: 'Ти знаходиш їжу і трохи монет.',
+        failText: 'Тебе проганяють.',
+        success: { money: 1, health: 1 },
+        fail: { reputation: -1 },
+      },
+      {
+        id: 'help-foreman',
+        label: 'Допомогти бригадиру',
+        description: 'Шанс на репутацію.',
+        baseChance: 0.6,
+        successText: 'Тебе помічають і хвалять.',
+        failText: 'Твою роботу критикують.',
+        success: { reputation: 2 },
+        fail: { reputation: -1 },
+      },
+      {
+        id: 'skip-harvest',
+        label: 'Не йти',
+        description: 'Без змін.',
+        baseChance: 1,
+        successText: 'Ти лишаєшся при своєму.',
+        failText: 'Ти лишаєшся при своєму.',
+        success: {},
+        fail: {},
+      },
+    ],
+  },
+  {
+    id: 'festival-day',
+    title: 'Свято в місті',
+    text: 'Натовп, музика і можливості.',
+    minStage: 'Rising',
+    choices: [
+      {
+        id: 'perform',
+        label: 'Виступити перед людьми',
+        description: 'Шанс на славу.',
+        baseChance: 0.45,
+        successText: 'Натовп аплодує твоєму виступу.',
+        failText: 'Тебе освистують.',
+        success: { reputation: 3 },
+        fail: { reputation: -2 },
+      },
+      {
+        id: 'sell-trinkets',
+        label: 'Продавати дрібниці',
+        description: 'Невеликий прибуток.',
+        baseChance: 0.7,
+        successText: 'Ти заробляєш на святі.',
+        failText: 'Продажі слабкі.',
+        success: { money: 3 },
+        fail: { money: -1 },
+      },
+      {
+        id: 'watch-guards',
+        label: 'Допомагати варті',
+        description: 'Репутація за порядок.',
+        baseChance: 0.6,
+        successText: 'Ти допомагаєш підтримати спокій.',
+        failText: 'Тебе відштовхують.',
+        success: { reputation: 2 },
+        fail: { reputation: -1 },
+      },
+      {
+        id: 'enjoy-festival',
+        label: 'Просто відпочити',
+        description: 'Відновлення сил.',
+        baseChance: 1,
+        successText: 'Ти добре відпочиваєш.',
+        failText: 'Ти добре відпочиваєш.',
+        success: { health: 1 },
+        fail: {},
+      },
+    ],
+  },
+  {
+    id: 'debt-collector',
+    title: 'Збирач боргів',
+    text: 'Хтось вимагає повернути гроші.',
+    minStage: 'Established',
+    choices: [
+      {
+        id: 'pay-debt',
+        label: 'Заплатити борг',
+        description: 'Втрата грошей, збереження репутації.',
+        baseChance: 0.8,
+        successText: 'Ти чесно розраховуєшся.',
+        failText: 'Грошей не вистачає.',
+        success: { money: -4, reputation: 2 },
+        fail: { reputation: -3 },
+      },
+      {
+        id: 'negotiate-debt',
+        label: 'Домовитись про відстрочку',
+        description: 'Шанс на компроміс.',
+        baseChance: 0.5,
+        successText: 'Тобі дають час.',
+        failText: 'Збирачі зляться.',
+        success: { reputation: 1 },
+        fail: { reputation: -2 },
+      },
+      {
+        id: 'hire-muscle',
+        label: 'Найняти охорону',
+        description: 'Дорого, але безпечно.',
+        baseChance: 0.6,
+        successText: 'Тебе не чіпають.',
+        failText: 'Охорона тікає.',
+        success: { money: -3 },
+        fail: { health: -2, money: -2 },
+      },
+      {
+        id: 'hide',
+        label: 'Сховатися',
+        description: 'Ризикована втеча.',
+        baseChance: 0.4,
+        successText: 'Ти зникаєш на деякий час.',
+        failText: 'Тебе знаходять і карають.',
+        success: { reputation: -1 },
+        fail: { health: -3, reputation: -2 },
+      },
+    ],
+  },
 ];
 
 const events: WorldEvent[] = [
@@ -761,6 +999,30 @@ const events: WorldEvent[] = [
     text: 'Місто заспокоюється. Ти відновлюєшся.',
     effects: { health: 2 },
   },
+  {
+    id: 'storm',
+    title: 'Буря',
+    text: 'Негода нищить припаси і плани.',
+    effects: { money: -2, health: -1 },
+  },
+  {
+    id: 'tax-collector',
+    title: 'Податковий збір',
+    text: 'Місто збирає додатковий податок.',
+    effects: { money: -3 },
+  },
+  {
+    id: 'lost-purse',
+    title: 'Втрачений гаманець',
+    text: 'Хтось губить гаманець поруч із тобою.',
+    effects: { money: 3, reputation: -1 },
+  },
+  {
+    id: 'free-soup',
+    title: 'Безкоштовний суп',
+    text: 'Мандрівні монахи роздають їжу.',
+    effects: { health: 1, reputation: 1 },
+  },
 ];
 
 const stageIndex: Record<Stage, number> = {
@@ -791,6 +1053,7 @@ const applyEffects = (stats: Stats, effects: Effects): Stats => ({
   health: stats.health + (effects.health ?? 0),
   age: stats.age + (effects.age ?? 0),
   family: stats.family + (effects.family ?? 0),
+  hungerDebt: stats.hungerDebt + (effects.hungerDebt ?? 0),
 });
 
 const shuffle = <T,>(items: T[]) => {
@@ -822,14 +1085,18 @@ const buildSceneDeck = () => {
 };
 
 const getNextScene = (deck: Scene[], startIndex: number, stage: Stage) => {
+  let fallback: { scene: Scene; index: number } | null = null;
   for (let i = startIndex; i < deck.length; i += 1) {
     const scene = deck[i];
+    if (!fallback) {
+      fallback = { scene, index: i };
+    }
     if (!scene.minStage) return { scene, index: i };
     if (stageIndex[stage] >= stageIndex[scene.minStage]) {
       return { scene, index: i };
     }
   }
-  return null;
+  return fallback;
 };
 
 const initialSceneDeck = buildSceneDeck();
@@ -841,6 +1108,7 @@ const defaultStats: Stats = {
   health: 10,
   age: 16,
   family: 0,
+  hungerDebt: 0,
 };
 
 const getChance = (choice: Choice, stats: Stats) => {
@@ -940,6 +1208,9 @@ export default function HomeScreen() {
   const characterListRef = useRef<FlatList<Character>>(null);
   const characterScrollX = useRef(new Animated.Value(0)).current;
   const [detailCharacter, setDetailCharacter] = useState<Character | null>(null);
+  const [choiceDetail, setChoiceDetail] = useState<{ choice: Choice; chance: number } | null>(
+    null
+  );
 
   const chanceMap = useMemo(() => {
     return scene.choices.reduce<Record<string, number>>((acc, choice) => {
@@ -960,7 +1231,7 @@ export default function HomeScreen() {
     nextStats.age += 1;
     const nextStage = stageLabel(nextStats);
     const resultText = success ? choice.successText : choice.failText;
-    const resultLine = `Хід ${turn}: ${resultText} (утримання ${upkeep})`;
+    let resultLine = `Хід ${turn}: ${resultText} (утримання ${upkeep})`;
 
     const nextTurn = turn + 1;
     let eventResult: WorldEvent | undefined;
@@ -986,11 +1257,33 @@ export default function HomeScreen() {
       ].slice(0, 6));
     }
 
+    let hungerDelta = 0;
+    let hungerHealthLoss = 0;
+    if (nextStats.money <= 0) {
+      nextStats.hungerDebt += 1;
+      hungerDelta = 1;
+      hungerHealthLoss = nextStats.hungerDebt;
+      nextStats.health -= hungerHealthLoss;
+      resultLine += `, голод -${hungerHealthLoss}`;
+    } else if (nextStats.hungerDebt > 0) {
+      const pay = Math.min(nextStats.money, nextStats.hungerDebt);
+      nextStats.money -= pay;
+      nextStats.hungerDebt -= pay;
+      hungerDelta = -pay;
+      if (pay > 0) {
+        resultLine += `, їжа -${pay}`;
+      }
+    }
+
     let lifeOver = nextStats.health <= 0 || nextTurn > MAX_TURNS;
     if (nextStats.health <= 0) {
-      setEndingReason(
-        'Твоє здоровʼя впало до нуля через виснаження, травми та наслідки рішень.'
-      );
+      if (nextStats.hungerDebt > 0) {
+        setEndingReason('Голод виснажив тебе до межі.');
+      } else {
+        setEndingReason(
+          'Твоє здоровʼя впало до нуля через виснаження, травми та наслідки рішень.'
+        );
+      }
     } else if (nextTurn > MAX_TURNS) {
       setEndingReason('Твоє життя добігло кінця після повного циклу ходів.');
     }
@@ -999,7 +1292,7 @@ export default function HomeScreen() {
       : getNextScene(sceneDeck, sceneIndex + 1, nextStage);
     if (!lifeOver && !nextScenePick) {
       lifeOver = true;
-      setEndingReason('Історії закінчилися — твоє життя завершилось без нових шансів.');
+      setEndingReason('Ти пройшов усі 18 кроків життя.');
     }
     const nextScene = nextScenePick?.scene ?? scene;
 
@@ -1019,6 +1312,7 @@ export default function HomeScreen() {
       deltas: {
         ...effects,
         money: (effects.money ?? 0) + upkeep,
+        hungerDebt: hungerDelta,
       },
       event: eventResult,
     });
@@ -1245,27 +1539,28 @@ export default function HomeScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.screen} showsVerticalScrollIndicator={false}>
+    <View style={styles.gameScreen}>
+      <ScrollView contentContainerStyle={styles.screen} showsVerticalScrollIndicator={false}>
       <ThemedView style={styles.header}>
-        <ThemedText type="title" style={styles.headerTitle}>
-          Only One Life
-        </ThemedText>
         <ThemedText type="defaultSemiBold" style={styles.headerSubtitle}>
           Хід {Math.min(turn, MAX_TURNS)} / {MAX_TURNS} · Етап: {stageUa[stage]}
         </ThemedText>
+        <View style={styles.statsHeader}>
+          <StatInline label="Гр" value={stats.money} />
+          <StatInline label="Реп" value={stats.reputation} />
+          <StatInline label="Сил" value={stats.skill} />
+          <StatInline label="Зд" value={stats.health} />
+          <StatInline label="Гол" value={stats.hungerDebt} />
+          <StatInline label="Вік" value={stats.age} />
+          <StatInline label="Сім" value={stats.family} />
+        </View>
       </ThemedView>
-
-      <ThemedView style={styles.section}>
-        <ThemedText type="defaultSemiBold">Стати</ThemedText>
-        <ThemedView style={styles.statsCard}>
-          <Stat label="Гроші" value={stats.money} />
-          <Stat label="Репутація" value={stats.reputation} />
-          <Stat label="Сила/Вміння" value={stats.skill} />
-          <Stat label="Здоровʼя" value={stats.health} />
-          <Stat label="Вік" value={stats.age} />
-          <Stat label="Сімʼя" value={stats.family} />
+      {selectedCharacter ? (
+        <ThemedView style={styles.heroCard}>
+          <Image source={selectedCharacter.image} style={styles.heroImage} />
         </ThemedView>
-      </ThemedView>
+      ) : null}
+
 
       <ThemedView style={styles.section}>
         <ThemedText type="defaultSemiBold">Сцена</ThemedText>
@@ -1290,18 +1585,26 @@ export default function HomeScreen() {
               </Pressable>
             </View>
           ) : (
-            <View style={styles.choiceList}>
+            <View style={styles.choiceGrid}>
               {scene.choices.map((choice) => {
                 const chance = Math.round(chanceMap[choice.id] * 100);
                 return (
-                  <Pressable
-                    key={choice.id}
-                    onPress={() => handleChoice(choice)}
-                    style={styles.choiceButton}>
-                    <ThemedText type="defaultSemiBold">{choice.label}</ThemedText>
-                    <ThemedText style={styles.choiceDescription}>{choice.description}</ThemedText>
-                    <ThemedText style={styles.choiceChance}>Шанс: ~{chance}%</ThemedText>
-                  </Pressable>
+                  <View key={choice.id} style={styles.choiceRow}>
+                    <View style={styles.choiceRowText}>
+                      <ThemedText type="defaultSemiBold">{choice.label}</ThemedText>
+                      <ThemedText style={styles.choiceChance}>Шанс: ~{chance}%</ThemedText>
+                    </View>
+                    <Pressable
+                      onPress={() => handleChoice(choice)}
+                      style={styles.choicePickCorner}>
+                      <ThemedText style={styles.choicePickCornerText}>✓</ThemedText>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => setChoiceDetail({ choice, chance })}
+                      style={styles.choiceDetailButton}>
+                      <ThemedText style={styles.choiceDetailText}>Деталі</ThemedText>
+                    </Pressable>
+                  </View>
                 );
               })}
             </View>
@@ -1323,6 +1626,7 @@ export default function HomeScreen() {
           )}
         </ThemedView>
       </ThemedView>
+      </ScrollView>
       {result ? (
         <View style={styles.resultOverlay}>
           <View style={styles.resultCard}>
@@ -1338,6 +1642,7 @@ export default function HomeScreen() {
               <Delta label="Сила/Вміння" value={result.deltas.skill ?? 0} />
               <Delta label="Здоровʼя" value={result.deltas.health ?? 0} />
               <Delta label="Сімʼя" value={result.deltas.family ?? 0} />
+              <Delta label="Голод" value={result.deltas.hungerDebt ?? 0} />
             </View>
             {result.event ? (
               <View style={styles.eventBox}>
@@ -1360,7 +1665,45 @@ export default function HomeScreen() {
           </View>
         </View>
       ) : null}
-    </ScrollView>
+      {choiceDetail ? (
+        <View style={styles.resultOverlay}>
+          <View style={styles.resultCard}>
+            <View style={styles.resultHeader}>
+              <ThemedText type="subtitle" style={styles.resultTitle}>
+                {choiceDetail.choice.label}
+              </ThemedText>
+              <ThemedText style={styles.resultText}>{choiceDetail.choice.description}</ThemedText>
+            </View>
+            <ThemedText style={styles.choiceChance}>Шанс: ~{choiceDetail.chance}%</ThemedText>
+            <View style={styles.deltaList}>
+              <ThemedText type="defaultSemiBold" style={styles.modalSectionTitle}>
+                Успіх
+              </ThemedText>
+              <Delta label="Гроші" value={choiceDetail.choice.success.money ?? 0} />
+              <Delta label="Репутація" value={choiceDetail.choice.success.reputation ?? 0} />
+              <Delta label="Сила/Вміння" value={choiceDetail.choice.success.skill ?? 0} />
+              <Delta label="Здоровʼя" value={choiceDetail.choice.success.health ?? 0} />
+              <Delta label="Сімʼя" value={choiceDetail.choice.success.family ?? 0} />
+              <ThemedText style={styles.resultText}>{choiceDetail.choice.successText}</ThemedText>
+            </View>
+            <View style={styles.deltaList}>
+              <ThemedText type="defaultSemiBold" style={styles.modalSectionTitle}>
+                Невдача
+              </ThemedText>
+              <Delta label="Гроші" value={choiceDetail.choice.fail.money ?? 0} />
+              <Delta label="Репутація" value={choiceDetail.choice.fail.reputation ?? 0} />
+              <Delta label="Сила/Вміння" value={choiceDetail.choice.fail.skill ?? 0} />
+              <Delta label="Здоровʼя" value={choiceDetail.choice.fail.health ?? 0} />
+              <Delta label="Сімʼя" value={choiceDetail.choice.fail.family ?? 0} />
+              <ThemedText style={styles.resultText}>{choiceDetail.choice.failText}</ThemedText>
+            </View>
+            <Pressable onPress={() => setChoiceDetail(null)} style={styles.resultButton}>
+              <ThemedText style={styles.resultButtonText}>Закрити</ThemedText>
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
+    </View>
   );
 }
 
@@ -1369,6 +1712,17 @@ function Stat({ label, value }: { label: string; value: number }) {
     <View style={styles.statItem}>
       <ThemedText style={styles.statLabel}>{label}</ThemedText>
       <ThemedText type="defaultSemiBold" style={styles.statValue}>
+        {value}
+      </ThemedText>
+    </View>
+  );
+}
+
+function StatInline({ label, value }: { label: string; value: number }) {
+  return (
+    <View style={styles.statInline}>
+      <ThemedText style={styles.statInlineLabel}>{label}</ThemedText>
+      <ThemedText type="defaultSemiBold" style={styles.statInlineValue}>
         {value}
       </ThemedText>
     </View>
@@ -1429,6 +1783,9 @@ const styles = StyleSheet.create({
     gap: 16,
     backgroundColor: '#F7F1E6',
   },
+  gameScreen: {
+    flex: 1,
+  },
   header: {
     gap: 6,
     padding: 14,
@@ -1443,8 +1800,46 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     color: 'rgba(246,231,200,0.8)',
   },
+  statsHeader: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 6,
+  },
+  statInline: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    flexDirection: 'row',
+    gap: 6,
+  },
+  statInlineLabel: {
+    color: '#F6E7C8',
+    fontSize: 11,
+  },
+  statInlineValue: {
+    color: '#FFFFFF',
+    fontSize: 12,
+  },
   section: {
     gap: 8,
+  },
+  heroCard: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(216,179,106,0.35)',
+    backgroundColor: '#FFF6E6',
+  },
+  heroImage: {
+    width: 180,
+    height: 200,
+    resizeMode: 'contain',
   },
   statsCard: {
     flexDirection: 'row',
@@ -1484,19 +1879,50 @@ const styles = StyleSheet.create({
   sceneText: {
     color: 'rgba(22,20,16,0.7)',
   },
-  choiceList: {
+  choiceGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
   },
-  choiceButton: {
-    padding: 12,
-    borderRadius: 14,
+  choiceRow: {
+    padding: 10,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: 'rgba(28,19,5,0.12)',
     backgroundColor: '#FFFBF4',
-    gap: 6,
+    gap: 8,
+    width: '48%',
   },
-  choiceDescription: {
-    color: 'rgba(22,20,16,0.7)',
+  choiceRowText: {
+    gap: 4,
+  },
+  choiceDetailButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(28,19,5,0.2)',
+  },
+  choiceDetailText: {
+    color: 'rgba(28,19,5,0.8)',
+    fontWeight: '600',
+  },
+  choicePickCorner: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(28,19,5,0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(28,19,5,0.25)',
+  },
+  choicePickCornerText: {
+    color: '#1C1305',
+    fontWeight: '700',
   },
   choiceChance: {
     color: 'rgba(22,20,16,0.55)',
@@ -1564,7 +1990,10 @@ const styles = StyleSheet.create({
   },
   resultOverlay: {
     position: 'absolute',
-    inset: 0,
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
     backgroundColor: 'rgba(8,6,4,0.7)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -1584,6 +2013,9 @@ const styles = StyleSheet.create({
   },
   resultTitle: {
     color: '#E8D3A0',
+  },
+  modalSectionTitle: {
+    color: '#F2DFC0',
   },
   resultText: {
     color: 'rgba(255,255,255,0.85)',
