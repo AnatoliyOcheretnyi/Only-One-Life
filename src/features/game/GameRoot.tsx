@@ -156,6 +156,7 @@ const getEnding = (stats: Stats, reason: string) => {
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
+  const [currentCharacterIndex, setCurrentCharacterIndex] = useState(0);
   const [stats, setStats] = useState<Stats>(defaultStats);
   const [turn, setTurn] = useState(1);
   const [log, setLog] = useState<string[]>([]);
@@ -424,8 +425,10 @@ export default function HomeScreen() {
   };
 
   const handleStart = () => {
-    if (!selectedCharacter) return;
-    const startingStats = { ...selectedCharacter.stats };
+    const picked = characters[currentCharacterIndex] ?? selectedCharacter;
+    if (!picked) return;
+    setSelectedCharacter(picked);
+    const startingStats = { ...picked.stats };
     startingStats.luck = rollInitialLuck();
     const startingStage = stageLabel(startingStats);
     const startingSeason = seasonFromTurn(1);
@@ -438,7 +441,7 @@ export default function HomeScreen() {
       0,
       startingStage,
       startingSeason,
-      selectedCharacter.id
+      picked.id
     );
     setSceneDeck(freshSceneDeck);
     setSceneIndex(firstScene?.index ?? 0);
@@ -555,6 +558,11 @@ export default function HomeScreen() {
                 [{ nativeEvent: { contentOffset: { x: characterScrollX } } }],
                 { useNativeDriver: true }
               )}
+              onMomentumScrollEnd={(event) => {
+                const index = Math.round(event.nativeEvent.contentOffset.x / snapInterval);
+                const nextIndex = Math.max(0, Math.min(characters.length - 1, index));
+                setCurrentCharacterIndex(nextIndex);
+              }}
               scrollEventThrottle={16}
               getItemLayout={(_, index) => ({
                 length: snapInterval,
@@ -562,7 +570,6 @@ export default function HomeScreen() {
                 index,
               })}
               renderItem={({ item, index }) => {
-                const active = item.id === selectedCharacter?.id;
                 const inputRange = [
                   (index - 1) * snapInterval,
                   index * snapInterval,
@@ -579,20 +586,15 @@ export default function HomeScreen() {
                   extrapolate: 'clamp',
                 });
                 return (
-                  <Pressable
-                    onPress={() => setSelectedCharacter(item)}
+                  <View
                     style={[
                       styles.characterCard,
                       { width: cardWidth, marginRight: cardGap },
-                      active && styles.characterCardActive,
                     ]}>
                     <View style={styles.characterHeader}>
                       <ThemedText type="defaultSemiBold" style={styles.characterName}>
                         {item.name}
                       </ThemedText>
-                      <View style={styles.roleChip}>
-                        <ThemedText style={styles.roleChipText}>Старт</ThemedText>
-                      </View>
                     </View>
                     <ThemedText style={styles.characterDesc}>{item.description}</ThemedText>
                     <View style={styles.characterStats}>
@@ -604,15 +606,14 @@ export default function HomeScreen() {
                     <Pressable onPress={() => setDetailCharacter(item)} style={styles.selectButton}>
                       <ThemedText style={styles.selectButtonText}>Деталі</ThemedText>
                     </Pressable>
-                  </Pressable>
+                  </View>
                 );
               }}
             />
           </View>
           <Pressable
             onPress={handleStart}
-            style={[styles.primaryButton, !selectedCharacter && styles.primaryButtonDisabled]}
-            disabled={!selectedCharacter}>
+            style={styles.primaryButton}>
             <ThemedText style={styles.primaryButtonText}>Почати життя</ThemedText>
           </Pressable>
         </View>
@@ -661,14 +662,6 @@ export default function HomeScreen() {
                 <StatRow label="Здоровʼя" value={detailCharacter.stats.health} />
               </View>
               <View style={styles.choiceList}>
-                <Pressable
-                  onPress={() => {
-                    setSelectedCharacter(detailCharacter);
-                    setDetailCharacter(null);
-                  }}
-                  style={styles.resultButton}>
-                  <ThemedText style={styles.resultButtonText}>Обрати цього персонажа</ThemedText>
-                </Pressable>
                 <Pressable onPress={() => setDetailCharacter(null)} style={styles.secondaryButton}>
                   <ThemedText style={styles.secondaryButtonText}>Закрити</ThemedText>
                 </Pressable>
