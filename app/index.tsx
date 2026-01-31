@@ -51,6 +51,7 @@ type Scene = {
   title: string;
   text: string;
   minStage?: Stage;
+  season?: Season | Season[];
   forCharacter?: string[];
   choices: Choice[];
 };
@@ -63,8 +64,10 @@ type WorldEvent = {
 };
 
 type Stage = 'Early' | 'Rising' | 'Established' | 'Noble';
+type Season = 'Spring' | 'Summer' | 'Autumn' | 'Winter';
 
-const MAX_TURNS = 18;
+const MAX_TURNS = 20;
+const SEASON_TURNS = 5;
 const EVENT_EVERY_TURNS = 3;
 const BASE_UPKEEP = -1;
 const MIN_HEALTH_FOR_FAMILY = 8;
@@ -863,6 +866,7 @@ const scenes: Scene[] = [
     id: 'winter-cold',
     title: 'Зимовий холод',
     text: 'Ночі холодні, дах потрібен більше ніж будь-коли.',
+    season: 'Winter',
     choices: [
       {
         id: 'rent-corner',
@@ -911,9 +915,114 @@ const scenes: Scene[] = [
     ],
   },
   {
+    id: 'snowstorm-road',
+    title: 'Сніжна буря',
+    text: 'Вітер зносить сліди, дорога майже зникає.',
+    season: 'Winter',
+    choices: [
+      {
+        id: 'seek-shelter',
+        label: 'Знайти укриття',
+        description: 'Безпека, але час і гроші.',
+        effort: 'rest',
+        baseChance: 0.75,
+        successText: 'Ти перечікуєш бурю.',
+        failText: 'Місця немає.',
+        success: { money: -1, health: 1, fatigue: -1 },
+        fail: { health: -2 },
+      },
+      {
+        id: 'push-through',
+        label: 'Йти крізь бурю',
+        description: 'Швидко, але ризиковано.',
+        effort: 'physical',
+        baseChance: 0.45,
+        successText: 'Ти проходиш шлях.',
+        failText: 'Ти збиваєшся і мерзнеш.',
+        success: { reputation: 1 },
+        fail: { health: -3, fatigue: 1 },
+      },
+      {
+        id: 'help-traveler',
+        label: 'Допомогти мандрівнику',
+        description: 'Репутація ціною сил.',
+        effort: 'physical',
+        baseChance: 0.5,
+        successText: 'Ви вибираєтесь разом.',
+        failText: 'Ти втрачаєш час і сили.',
+        success: { reputation: 2 },
+        fail: { health: -2, fatigue: 1 },
+      },
+      {
+        id: 'wait',
+        label: 'Перечекати на місці',
+        description: 'Без руху, але холодно.',
+        effort: 'rest',
+        baseChance: 0.6,
+        successText: 'Буря слабшає.',
+        failText: 'Ти змерзаєш.',
+        success: {},
+        fail: { health: -2 },
+      },
+    ],
+  },
+  {
+    id: 'frozen-river',
+    title: 'Крижана річка',
+    text: 'Лід тонкий, але перейти треба.',
+    season: 'Winter',
+    choices: [
+      {
+        id: 'cross-carefully',
+        label: 'Йти обережно',
+        description: 'Повільно, але надійніше.',
+        effort: 'physical',
+        baseChance: 0.7,
+        successText: 'Ти безпечно переходиш.',
+        failText: 'Лід тріскає.',
+        success: {},
+        fail: { health: -3 },
+      },
+      {
+        id: 'find-ferry',
+        label: 'Шукати перевізника',
+        description: 'Дорого, зате безпечніше.',
+        effort: 'social',
+        baseChance: 0.65,
+        successText: 'Тебе переправляють.',
+        failText: 'Ніхто не бере.',
+        success: { money: -2 },
+        fail: { reputation: -1 },
+      },
+      {
+        id: 'wait-thaw',
+        label: 'Чекати відлиги',
+        description: 'Втрата часу, менше ризику.',
+        effort: 'rest',
+        baseChance: 0.6,
+        successText: 'Рівень небезпеки зменшується.',
+        failText: 'Холод виснажує.',
+        success: { fatigue: -1 },
+        fail: { health: -2 },
+      },
+      {
+        id: 'dash-across',
+        label: 'Пробігти',
+        description: 'Швидко, але ризик дуже високий.',
+        effort: 'physical',
+        baseChance: 0.35,
+        successText: 'Ти проскакуєш.',
+        failText: 'Ти провалюєшся.',
+        success: { reputation: 1 },
+        fail: { health: -4 },
+      },
+    ],
+  },
+  {
     id: 'harvest-day',
     title: 'Жнива',
     text: 'Селяни шукають робочих рук.',
+    season: 'Autumn',
     choices: [
       {
         id: 'join-harvest',
@@ -962,10 +1071,115 @@ const scenes: Scene[] = [
     ],
   },
   {
+    id: 'apple-harvest',
+    title: 'Збір яблук',
+    text: 'Сад повен плодів, потрібні руки.',
+    season: 'Autumn',
+    choices: [
+      {
+        id: 'pick-apples',
+        label: 'Збирати яблука',
+        description: 'Спокійна робота.',
+        effort: 'physical',
+        baseChance: 0.85,
+        successText: 'Ти збираєш повні кошики.',
+        failText: 'Ти втомлюєшся швидше.',
+        success: { money: 2, health: 1 },
+        fail: { fatigue: 1 },
+      },
+      {
+        id: 'sell-quick',
+        label: 'Продавати врожай',
+        description: 'Шанс заробити більше.',
+        effort: 'social',
+        baseChance: 0.5,
+        successText: 'Ти швидко збуваєш яблука.',
+        failText: 'Ціни падають.',
+        success: { money: 4 },
+        fail: { money: -1 },
+      },
+      {
+        id: 'help-family',
+        label: 'Допомогти сімʼї',
+        description: 'Репутація через доброту.',
+        effort: 'social',
+        baseChance: 0.6,
+        successText: 'Тобі дякують.',
+        failText: 'Тебе не сприймають всерйоз.',
+        success: { reputation: 2 },
+        fail: { reputation: -1 },
+      },
+      {
+        id: 'skip-apples',
+        label: 'Не втручатись',
+        description: 'Без змін.',
+        effort: 'neutral',
+        baseChance: 1,
+        successText: 'Ти йдеш далі.',
+        failText: 'Ти йдеш далі.',
+        success: {},
+        fail: {},
+      },
+    ],
+  },
+  {
+    id: 'autumn-market',
+    title: 'Осінній ярмарок',
+    text: 'Листя падає, торгівля пожвавлюється.',
+    season: 'Autumn',
+    choices: [
+      {
+        id: 'trade-goods',
+        label: 'Торгувати',
+        description: 'Шанс на прибуток.',
+        effort: 'social',
+        baseChance: 0.6,
+        successText: 'Ти продаєш вигідно.',
+        failText: 'Покупців мало.',
+        success: { money: 3 },
+        fail: { money: -1 },
+      },
+      {
+        id: 'perform-trick',
+        label: 'Показати трюк',
+        description: 'Репутація за сміливість.',
+        effort: 'social',
+        baseChance: 0.45,
+        successText: 'Натовп вражений.',
+        failText: 'Тебе висміюють.',
+        success: { reputation: 2 },
+        fail: { reputation: -2 },
+      },
+      {
+        id: 'guard-stall',
+        label: 'Охороняти лавку',
+        description: 'Безпечно, але нудно.',
+        effort: 'physical',
+        baseChance: 0.7,
+        successText: 'Ти тримаєш порядок.',
+        failText: 'Хтось тікає з товаром.',
+        success: { money: 2 },
+        fail: { reputation: -1 },
+      },
+      {
+        id: 'rest-market',
+        label: 'Перепочити',
+        description: 'Відновлення сил.',
+        effort: 'rest',
+        baseChance: 1,
+        successText: 'Ти відпочиваєш.',
+        failText: 'Ти відпочиваєш.',
+        success: { fatigue: -1 },
+        fail: {},
+      },
+    ],
+  },
+  {
     id: 'festival-day',
     title: 'Свято в місті',
     text: 'Натовп, музика і можливості.',
     minStage: 'Rising',
+    season: 'Summer',
     choices: [
       {
         id: 'perform',
@@ -1009,6 +1223,110 @@ const scenes: Scene[] = [
         successText: 'Ти добре відпочиваєш.',
         failText: 'Ти добре відпочиваєш.',
         success: { health: 1, fatigue: -1 },
+        fail: {},
+      },
+    ],
+  },
+  {
+    id: 'summer-heat',
+    title: 'Літня спека',
+    text: 'Сонце пече, працювати важче.',
+    season: 'Summer',
+    choices: [
+      {
+        id: 'work-early',
+        label: 'Працювати зранку',
+        description: 'Менше виснаження.',
+        effort: 'physical',
+        baseChance: 0.75,
+        successText: 'Ти встигаєш до спеки.',
+        failText: 'Сили швидко зникають.',
+        success: { money: 2 },
+        fail: { fatigue: 1 },
+      },
+      {
+        id: 'seek-shade',
+        label: 'Шукати тінь',
+        description: 'Без ризику, але без вигоди.',
+        effort: 'rest',
+        baseChance: 1,
+        successText: 'Ти перепочиваєш.',
+        failText: 'Ти перепочиваєш.',
+        success: { fatigue: -1 },
+        fail: {},
+      },
+      {
+        id: 'sell-water',
+        label: 'Продавати воду',
+        description: 'Шанс заробити.',
+        effort: 'social',
+        baseChance: 0.55,
+        successText: 'Люди купують охоче.',
+        failText: 'Мало клієнтів.',
+        success: { money: 3 },
+        fail: { money: -1 },
+      },
+      {
+        id: 'help-workers',
+        label: 'Допомогти робітникам',
+        description: 'Репутація за підтримку.',
+        effort: 'physical',
+        baseChance: 0.6,
+        successText: 'Тебе поважають.',
+        failText: 'Ти виснажуєшся.',
+        success: { reputation: 2 },
+        fail: { health: -1 },
+      },
+    ],
+  },
+  {
+    id: 'summer-fair',
+    title: 'Літній ярмарок',
+    text: 'Майстри та купці зʼїжджаються з усіх доріг.',
+    season: 'Summer',
+    choices: [
+      {
+        id: 'sell-handwork',
+        label: 'Продавати вироби',
+        description: 'Шанс на прибуток.',
+        effort: 'social',
+        baseChance: 0.6,
+        successText: 'Торгівля йде добре.',
+        failText: 'Продажі малі.',
+        success: { money: 3 },
+        fail: { money: -1 },
+      },
+      {
+        id: 'watch-shows',
+        label: 'Дивитися вистави',
+        description: 'Відпочинок для душі.',
+        effort: 'rest',
+        baseChance: 1,
+        successText: 'Ти відволікаєшся.',
+        failText: 'Ти відволікаєшся.',
+        success: { fatigue: -1, reputation: 1 },
+        fail: {},
+      },
+      {
+        id: 'join-guards',
+        label: 'Допомогти охороні',
+        description: 'Репутація та порядок.',
+        effort: 'physical',
+        baseChance: 0.65,
+        successText: 'Ти підтримуєш порядок.',
+        failText: 'Натовп тіснить.',
+        success: { reputation: 2 },
+        fail: { health: -1 },
+      },
+      {
+        id: 'avoid-crowd',
+        label: 'Уникати натовпу',
+        description: 'Безпечно, але без вигоди.',
+        effort: 'neutral',
+        baseChance: 1,
+        successText: 'Ти тримаєшся осторонь.',
+        failText: 'Ти тримаєшся осторонь.',
+        success: {},
         fail: {},
       },
     ],
@@ -1222,6 +1540,7 @@ const scenes: Scene[] = [
     id: 'fishing-day',
     title: 'Риболовля',
     text: 'Рибаки шукають помічника на світанку.',
+    season: ['Spring', 'Summer'],
     choices: [
       {
         id: 'row-boat',
@@ -1264,6 +1583,110 @@ const scenes: Scene[] = [
         baseChance: 1,
         successText: 'Ти пропускаєш риболовлю.',
         failText: 'Ти пропускаєш риболовлю.',
+        success: {},
+        fail: {},
+      },
+    ],
+  },
+  {
+    id: 'spring-thaw',
+    title: 'Весняна відлига',
+    text: 'Сніг тане, дороги розмиває.',
+    season: 'Spring',
+    choices: [
+      {
+        id: 'clear-road',
+        label: 'Чистити дорогу',
+        description: 'Важко, але платять.',
+        effort: 'physical',
+        baseChance: 0.7,
+        successText: 'Ти допомагаєш розчистити шлях.',
+        failText: 'Бруд і холод вибивають з сил.',
+        success: { money: 2, reputation: 1 },
+        fail: { health: -1, fatigue: 1 },
+      },
+      {
+        id: 'deliver-goods',
+        label: 'Доставляти товари',
+        description: 'Ризик на болоті.',
+        effort: 'physical',
+        baseChance: 0.5,
+        successText: 'Ти доставляєш вантаж.',
+        failText: 'Віз грузне, ти втрачаєш час.',
+        success: { money: 3 },
+        fail: { money: -1, fatigue: 1 },
+      },
+      {
+        id: 'help-farmers',
+        label: 'Допомогти селянам',
+        description: 'Репутація за підтримку.',
+        effort: 'physical',
+        baseChance: 0.6,
+        successText: 'Тобі дякують.',
+        failText: 'Тебе не беруть.',
+        success: { reputation: 2 },
+        fail: { reputation: -1 },
+      },
+      {
+        id: 'wait-thaw',
+        label: 'Чекати покращення',
+        description: 'Безпечно, але без вигоди.',
+        effort: 'rest',
+        baseChance: 1,
+        successText: 'Ти бережеш сили.',
+        failText: 'Ти бережеш сили.',
+        success: { fatigue: -1 },
+        fail: {},
+      },
+    ],
+  },
+  {
+    id: 'roof-repair',
+    title: 'Лагодження дахів',
+    text: 'Після зими чимало дахів протікає.',
+    season: 'Spring',
+    choices: [
+      {
+        id: 'climb-roof',
+        label: 'Лізти на дах',
+        description: 'Ризиковано, але добре платять.',
+        effort: 'physical',
+        baseChance: 0.55,
+        successText: 'Ти лагодиш дах і отримуєш платню.',
+        failText: 'Ти падаєш і травмуєшся.',
+        success: { money: 4 },
+        fail: { health: -3 },
+      },
+      {
+        id: 'carry-tiles',
+        label: 'Носити матеріали',
+        description: 'Менший ризик, стабільна платня.',
+        effort: 'physical',
+        baseChance: 0.8,
+        successText: 'Ти працюєш цілий день.',
+        failText: 'Спина болить, ти йдеш.',
+        success: { money: 2 },
+        fail: { fatigue: 1 },
+      },
+      {
+        id: 'negotiate-pay',
+        label: 'Домовитись про оплату',
+        description: 'Шанс на кращу платню.',
+        effort: 'social',
+        baseChance: 0.45,
+        successText: 'Ти отримуєш більше.',
+        failText: 'Домовитись не вдається.',
+        success: { money: 3, reputation: 1 },
+        fail: { reputation: -1 },
+      },
+      {
+        id: 'skip-roof',
+        label: 'Не братись',
+        description: 'Без змін.',
+        effort: 'neutral',
+        baseChance: 1,
+        successText: 'Ти йдеш далі.',
+        failText: 'Ти йдеш далі.',
         success: {},
         fail: {},
       },
@@ -1531,6 +1954,7 @@ const scenes: Scene[] = [
     id: 'flood-streets',
     title: 'Повінь на вулицях',
     text: 'Вода заливає квартали.',
+    season: 'Spring',
     choices: [
       {
         id: 'save-goods',
@@ -2137,6 +2561,18 @@ const stageUa: Record<Stage, string> = {
   Noble: 'Шляхта',
 };
 
+const seasonUa: Record<Season, string> = {
+  Spring: 'Весна',
+  Summer: 'Літо',
+  Autumn: 'Осінь',
+  Winter: 'Зима',
+};
+
+const seasonFromTurn = (turn: number): Season => {
+  const index = Math.floor((turn - 1) / SEASON_TURNS) % 4;
+  return ['Spring', 'Summer', 'Autumn', 'Winter'][index] as Season;
+};
+
 const effectFromText = (text: string) => {
   const lower = text.toLowerCase();
   if (lower.includes('буря') || lower.includes('дощ') || lower.includes('повін')) return 'rain';
@@ -2188,6 +2624,7 @@ const getNextScene = (
   deck: Scene[],
   startIndex: number,
   stage: Stage,
+  season: Season,
   characterId?: string | null
 ) => {
   let fallback: { scene: Scene; index: number } | null = null;
@@ -2195,6 +2632,12 @@ const getNextScene = (
     const scene = deck[i];
     if (scene.forCharacter && characterId && !scene.forCharacter.includes(characterId)) {
       continue;
+    }
+    if (scene.season) {
+      const seasons = Array.isArray(scene.season) ? scene.season : [scene.season];
+      if (!seasons.includes(season)) {
+        continue;
+      }
     }
     if (!fallback) {
       fallback = { scene, index: i };
@@ -2301,10 +2744,18 @@ export default function HomeScreen() {
   const [turn, setTurn] = useState(1);
   const [log, setLog] = useState<string[]>([]);
   const stage = stageLabel(stats);
+  const season = seasonFromTurn(turn);
+  const turnsToNextSeason = SEASON_TURNS - ((turn - 1) % SEASON_TURNS);
   const [sceneDeck, setSceneDeck] = useState<Scene[]>(() => initialSceneDeck);
   const [sceneIndex, setSceneIndex] = useState(0);
   const [scene, setScene] = useState<Scene>(() => {
-    const next = getNextScene(initialSceneDeck, 0, stage, selectedCharacter?.id);
+    const next = getNextScene(
+      initialSceneDeck,
+      0,
+      stage,
+      seasonFromTurn(1),
+      selectedCharacter?.id
+    );
     return next?.scene ?? initialSceneDeck[0];
   });
   const [gameOver, setGameOver] = useState(false);
@@ -2481,10 +2932,16 @@ export default function HomeScreen() {
     }
     const nextScenePick = lifeOver
       ? null
-      : getNextScene(sceneDeck, sceneIndex + 1, nextStage, selectedCharacter?.id);
+      : getNextScene(
+          sceneDeck,
+          sceneIndex + 1,
+          nextStage,
+          seasonFromTurn(nextTurn),
+          selectedCharacter?.id
+        );
     if (!lifeOver && !nextScenePick) {
       lifeOver = true;
-      setEndingReason('Ти пройшов усі 18 кроків життя.');
+      setEndingReason('Ти пройшов усі 20 кроків життя.');
     }
     const nextScene = nextScenePick?.scene ?? scene;
 
@@ -2515,11 +2972,18 @@ export default function HomeScreen() {
     if (!selectedCharacter) return;
     const startingStats = { ...selectedCharacter.stats };
     const startingStage = stageLabel(startingStats);
+    const startingSeason = seasonFromTurn(1);
     setStats(startingStats);
     setTurn(1);
     setLog([]);
     const freshSceneDeck = buildSceneDeck();
-    const firstScene = getNextScene(freshSceneDeck, 0, startingStage, selectedCharacter.id);
+    const firstScene = getNextScene(
+      freshSceneDeck,
+      0,
+      startingStage,
+      startingSeason,
+      selectedCharacter.id
+    );
     setSceneDeck(freshSceneDeck);
     setSceneIndex(firstScene?.index ?? 0);
     setScene(firstScene?.scene ?? freshSceneDeck[0]);
@@ -2535,6 +2999,7 @@ export default function HomeScreen() {
   const resetLife = () => {
     const resetStats = selectedCharacter ? { ...selectedCharacter.stats } : { ...defaultStats };
     const resetStage = stageLabel(resetStats);
+    const resetSeason = seasonFromTurn(1);
     setStats(resetStats);
     setTurn(1);
     setLog([]);
@@ -2543,6 +3008,7 @@ export default function HomeScreen() {
       freshSceneDeck,
       0,
       resetStage,
+      resetSeason,
       selectedCharacter?.id
     );
     setSceneDeck(freshSceneDeck);
@@ -2762,7 +3228,8 @@ export default function HomeScreen() {
       <ScrollView contentContainerStyle={styles.screen} showsVerticalScrollIndicator={false}>
       <ThemedView style={styles.header}>
         <ThemedText type="defaultSemiBold" style={styles.headerSubtitle}>
-          Хід {Math.min(turn, MAX_TURNS)} / {MAX_TURNS} · Етап: {stageUa[stage]}
+          Хід {Math.min(turn, MAX_TURNS)} / {MAX_TURNS} · Етап: {stageUa[stage]} ·{' '}
+          {seasonUa[season]} · До наступної: {turnsToNextSeason}
         </ThemedText>
         <View style={styles.statsHeader}>
           <StatInline label="Гроші" value={stats.money} />
