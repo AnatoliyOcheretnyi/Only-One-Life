@@ -22,6 +22,7 @@ type Stats = {
   age: number;
   family: number;
   hungerDebt: number;
+  fatigue: number;
 };
 
 type Effects = Partial<Stats>;
@@ -31,6 +32,7 @@ type Choice = {
   label: string;
   description: string;
   baseChance: number;
+  minHealth?: number;
   successText: string;
   failText: string;
   success: Effects;
@@ -57,6 +59,8 @@ type Stage = 'Early' | 'Rising' | 'Established' | 'Noble';
 const MAX_TURNS = 18;
 const EVENT_EVERY_TURNS = 3;
 const BASE_UPKEEP = -1;
+const MIN_HEALTH_FOR_FAMILY = 8;
+const MIN_HEALTH_FOR_COMBAT = 6;
 
 const clamp = (value: number, min = 0, max = 1) => Math.max(min, Math.min(max, value));
 
@@ -75,7 +79,16 @@ const characters: Character[] = [
     name: 'Вуличний сирота',
     description: 'Витривалий, але без грошей і звʼязків.',
     lore: 'Ти виріс на холодних вулицях і навчився виживати без підтримки. Твої навички грубі, але надійні.',
-    stats: { money: 2, reputation: 1, skill: 2, health: 12, age: 16, family: 0, hungerDebt: 0 },
+    stats: {
+      money: 2,
+      reputation: 1,
+      skill: 2,
+      health: 12,
+      age: 16,
+      family: 0,
+      hungerDebt: 0,
+      fatigue: 0,
+    },
     image: require('../src/assets/charecters/syrota.png'),
   },
   {
@@ -83,7 +96,16 @@ const characters: Character[] = [
     name: 'Учень майстра',
     description: 'Трохи вмінь та помірна репутація.',
     lore: 'Ти бачив ремесло зблизька, але справжня майстерність ще попереду. Люди ставляться до тебе з обережною повагою.',
-    stats: { money: 4, reputation: 3, skill: 3, health: 10, age: 17, family: 0, hungerDebt: 0 },
+    stats: {
+      money: 4,
+      reputation: 3,
+      skill: 3,
+      health: 10,
+      age: 17,
+      family: 0,
+      hungerDebt: 0,
+      fatigue: 0,
+    },
     image: require('../src/assets/charecters/uchen.png'),
   },
   {
@@ -91,7 +113,16 @@ const characters: Character[] = [
     name: 'Біженець',
     description: 'Мало грошей, але сильне здоровʼя.',
     lore: 'Після втечі від війни ти втратив дім, але зберіг витривалість. Ти не маєш звʼязків, зате маєш силу.',
-    stats: { money: 3, reputation: 1, skill: 1, health: 14, age: 18, family: 0, hungerDebt: 0 },
+    stats: {
+      money: 3,
+      reputation: 1,
+      skill: 1,
+      health: 14,
+      age: 18,
+      family: 0,
+      hungerDebt: 0,
+      fatigue: 0,
+    },
     image: require('../src/assets/charecters/bizhenec.png'),
   },
   {
@@ -99,7 +130,16 @@ const characters: Character[] = [
     name: 'Селянин',
     description: 'Звик до важкої праці, мало грошей, але міцне здоровʼя.',
     lore: 'Ти виріс на землі та звик до важкої праці. Вмієш витримувати труднощі, але багатства не маєш.',
-    stats: { money: 3, reputation: 2, skill: 2, health: 12, age: 20, family: 0, hungerDebt: 0 },
+    stats: {
+      money: 3,
+      reputation: 2,
+      skill: 2,
+      health: 12,
+      age: 20,
+      family: 0,
+      hungerDebt: 0,
+      fatigue: 0,
+    },
     image: require('../src/assets/charecters/selianyn.png'),
   },
 ];
@@ -147,7 +187,7 @@ const scenes: Scene[] = [
         baseChance: 1,
         successText: 'Ти відновлюєш сили та здоровʼя.',
         failText: 'Ти відновлюєш сили та здоровʼя.',
-        success: { health: 2 },
+        success: { health: 2, fatigue: -2 },
         fail: {},
       },
     ],
@@ -221,13 +261,14 @@ const scenes: Scene[] = [
         baseChance: 1,
         successText: 'Ти зберігаєш час для інших справ.',
         failText: 'Ти зберігаєш час для інших справ.',
-        success: {},
+        success: { fatigue: -1 },
         fail: {},
       },
       {
         id: 'sparring',
         label: 'Вийти на спаринг',
         description: 'Швидкий прогрес або травма.',
+        minHealth: MIN_HEALTH_FOR_COMBAT,
         baseChance: 0.45,
         successText: 'Ти показуєш силу і здобуваєш повагу.',
         failText: 'Ти отримуєш удар і втрачаєш здоровʼя.',
@@ -256,6 +297,7 @@ const scenes: Scene[] = [
         id: 'start-family',
         label: 'Зробити крок',
         description: 'Стабільність і тягарі.',
+        minHealth: MIN_HEALTH_FOR_FAMILY,
         baseChance: 0.6,
         successText: 'Ти знаходиш пару. Сімʼя зʼявляється.',
         failText: 'Спроба не вдалася, але ти вчишся терпінню.',
@@ -276,6 +318,7 @@ const scenes: Scene[] = [
         id: 'matchmaker',
         label: 'Звернутись до свахи',
         description: 'Шанс на сильні звʼязки.',
+        minHealth: MIN_HEALTH_FOR_FAMILY,
         baseChance: 0.45,
         successText: 'Сваха знаходить добру пару.',
         failText: 'Спроба лише марнує гроші.',
@@ -304,6 +347,7 @@ const scenes: Scene[] = [
         id: 'support-family',
         label: 'Підтримати',
         description: 'Більше турбот і відповідальності.',
+        minHealth: MIN_HEALTH_FOR_FAMILY,
         baseChance: 0.5,
         successText: 'У твоїй сімʼї народжується дитина.',
         failText: 'Зараз не вийшло, але звʼязок міцніший.',
@@ -410,6 +454,7 @@ const scenes: Scene[] = [
         id: 'challenge-duel',
         label: 'Викликати задираку',
         description: 'Ризикований показ сили.',
+        minHealth: MIN_HEALTH_FOR_COMBAT,
         baseChance: 0.4,
         successText: 'Ти виграєш двобій. Люди це пам’ятають.',
         failText: 'Ти програєш і кульгаєш геть.',
@@ -782,7 +827,7 @@ const scenes: Scene[] = [
         baseChance: 0.9,
         successText: 'Ти грієшся і набираєшся сил.',
         failText: 'Ти не знаходиш місця.',
-        success: { money: -2, health: 2 },
+        success: { money: -2, health: 2, fatigue: -1 },
         fail: { health: -2 },
       },
       {
@@ -792,7 +837,7 @@ const scenes: Scene[] = [
         baseChance: 0.6,
         successText: 'Тебе приймають до вогню.',
         failText: 'Тебе проганяють.',
-        success: { reputation: 1, health: 1 },
+        success: { reputation: 1, health: 1, fatigue: -1 },
         fail: { health: -1 },
       },
       {
@@ -802,8 +847,8 @@ const scenes: Scene[] = [
         baseChance: 0.5,
         successText: 'Ти заробляєш, але виснажуєшся.',
         failText: 'Ти змерзаєш і втрачаєш сили.',
-        success: { money: 3, health: -1 },
-        fail: { health: -2 },
+        success: { money: 3, health: -1, fatigue: 1 },
+        fail: { health: -2, fatigue: 1 },
       },
       {
         id: 'endure-cold',
@@ -907,7 +952,7 @@ const scenes: Scene[] = [
         baseChance: 1,
         successText: 'Ти добре відпочиваєш.',
         failText: 'Ти добре відпочиваєш.',
-        success: { health: 1 },
+        success: { health: 1, fatigue: -1 },
         fail: {},
       },
     ],
@@ -1054,6 +1099,7 @@ const applyEffects = (stats: Stats, effects: Effects): Stats => ({
   age: stats.age + (effects.age ?? 0),
   family: stats.family + (effects.family ?? 0),
   hungerDebt: stats.hungerDebt + (effects.hungerDebt ?? 0),
+  fatigue: stats.fatigue + (effects.fatigue ?? 0),
 });
 
 const shuffle = <T,>(items: T[]) => {
@@ -1109,6 +1155,7 @@ const defaultStats: Stats = {
   age: 16,
   family: 0,
   hungerDebt: 0,
+  fatigue: 0,
 };
 
 const getChance = (choice: Choice, stats: Stats) => {
@@ -1118,6 +1165,7 @@ const getChance = (choice: Choice, stats: Stats) => {
     stats.reputation * 0.02 +
     stats.health * 0.01 -
     stats.money * 0.005 -
+    stats.fatigue * 0.02 -
     penalty;
   return clamp(choice.baseChance + modifier, 0.1, 0.95);
 };
@@ -1221,6 +1269,7 @@ export default function HomeScreen() {
 
   const handleChoice = (choice: Choice) => {
     if (gameOver) return;
+    if (choice.minHealth && stats.health < choice.minHealth) return;
     const chance = chanceMap[choice.id];
     const success = Math.random() < chance;
     const effects = success ? choice.success : choice.fail;
@@ -1257,7 +1306,10 @@ export default function HomeScreen() {
       ].slice(0, 6));
     }
 
+    const beforeHunger = nextStats.hungerDebt;
+    const beforeFatigue = nextStats.fatigue;
     let hungerDelta = 0;
+    let fatigueDelta = 0;
     let hungerHealthLoss = 0;
     if (nextStats.money <= 0) {
       nextStats.hungerDebt += 1;
@@ -1274,6 +1326,14 @@ export default function HomeScreen() {
         resultLine += `, їжа -${pay}`;
       }
     }
+
+    nextStats.fatigue += 1;
+    if (nextStats.fatigue < 0) nextStats.fatigue = 0;
+    if (nextStats.fatigue >= 6) {
+      nextStats.health -= 1;
+      resultLine += ', втома -1 здоровʼя';
+    }
+    fatigueDelta = nextStats.fatigue - beforeFatigue;
 
     let lifeOver = nextStats.health <= 0 || nextTurn > MAX_TURNS;
     if (nextStats.health <= 0) {
@@ -1313,6 +1373,7 @@ export default function HomeScreen() {
         ...effects,
         money: (effects.money ?? 0) + upkeep,
         hungerDebt: hungerDelta,
+        fatigue: fatigueDelta,
       },
       event: eventResult,
     });
@@ -1348,6 +1409,23 @@ export default function HomeScreen() {
     setSceneDeck(freshSceneDeck);
     setSceneIndex(firstScene?.index ?? 0);
     setScene(firstScene?.scene ?? freshSceneDeck[0]);
+    setGameOver(false);
+    setScreen('choose');
+    setResult(null);
+    setEventDeck(shuffle(events));
+    setEventIndex(0);
+    setDetailCharacter(null);
+    setEndingReason('');
+  };
+
+  const exitToStart = () => {
+    setStats(defaultStats);
+    setTurn(1);
+    setLog([]);
+    const freshDeck = buildSceneDeck();
+    setSceneDeck(freshDeck);
+    setSceneIndex(0);
+    setScene(freshDeck[0]);
     setGameOver(false);
     setScreen('start');
     setResult(null);
@@ -1546,13 +1624,14 @@ export default function HomeScreen() {
           Хід {Math.min(turn, MAX_TURNS)} / {MAX_TURNS} · Етап: {stageUa[stage]}
         </ThemedText>
         <View style={styles.statsHeader}>
-          <StatInline label="Гр" value={stats.money} />
-          <StatInline label="Реп" value={stats.reputation} />
-          <StatInline label="Сил" value={stats.skill} />
-          <StatInline label="Зд" value={stats.health} />
-          <StatInline label="Гол" value={stats.hungerDebt} />
+          <StatInline label="Гроші" value={stats.money} />
+          <StatInline label="Репутація" value={stats.reputation} />
+          <StatInline label="Сила" value={stats.skill} />
+          <StatInline label="Здоровʼя" value={stats.health} />
+          <StatInline label="Голод" value={stats.hungerDebt} />
+          <StatInline label="Втома" value={stats.fatigue} />
           <StatInline label="Вік" value={stats.age} />
-          <StatInline label="Сім" value={stats.family} />
+          <StatInline label="Сімʼя" value={stats.family} />
         </View>
       </ThemedView>
       {selectedCharacter ? (
@@ -1565,8 +1644,6 @@ export default function HomeScreen() {
       <ThemedView style={styles.section}>
         <ThemedText type="defaultSemiBold">Сцена</ThemedText>
         <ThemedView style={styles.sceneCard}>
-          <ThemedText type="subtitle">{scene.title}</ThemedText>
-          <ThemedText style={styles.sceneText}>{scene.text}</ThemedText>
           {gameOver ? (
             <View style={styles.ending}>
               {(() => {
@@ -1583,19 +1660,31 @@ export default function HomeScreen() {
               <Pressable onPress={resetLife} style={styles.primaryButton}>
                 <ThemedText style={styles.primaryButtonText}>Почати інше життя</ThemedText>
               </Pressable>
+              <Pressable onPress={exitToStart} style={styles.secondaryButton}>
+                <ThemedText style={styles.secondaryButtonText}>Вийти</ThemedText>
+              </Pressable>
             </View>
           ) : (
-            <View style={styles.choiceGrid}>
-              {scene.choices.map((choice) => {
-                const chance = Math.round(chanceMap[choice.id] * 100);
-                return (
+            <>
+              <ThemedText type="subtitle">{scene.title}</ThemedText>
+              <ThemedText style={styles.sceneText}>{scene.text}</ThemedText>
+              <View style={styles.choiceGrid}>
+                {scene.choices.map((choice) => {
+                  const chance = Math.round(chanceMap[choice.id] * 100);
+                  return (
                   <View key={choice.id} style={styles.choiceRow}>
                     <View style={styles.choiceRowText}>
                       <ThemedText type="defaultSemiBold">{choice.label}</ThemedText>
                       <ThemedText style={styles.choiceChance}>Шанс: ~{chance}%</ThemedText>
                     </View>
+                    {choice.minHealth && stats.health < choice.minHealth ? (
+                      <ThemedText style={styles.choiceLockedText}>
+                        Потрібно здоровʼя {choice.minHealth}
+                      </ThemedText>
+                    ) : null}
                     <Pressable
                       onPress={() => handleChoice(choice)}
+                      disabled={!!choice.minHealth && stats.health < choice.minHealth}
                       style={styles.choicePickCorner}>
                       <ThemedText style={styles.choicePickCornerText}>✓</ThemedText>
                     </Pressable>
@@ -1608,6 +1697,7 @@ export default function HomeScreen() {
                 );
               })}
             </View>
+            </>
           )}
         </ThemedView>
       </ThemedView>
@@ -1643,6 +1733,7 @@ export default function HomeScreen() {
               <Delta label="Здоровʼя" value={result.deltas.health ?? 0} />
               <Delta label="Сімʼя" value={result.deltas.family ?? 0} />
               <Delta label="Голод" value={result.deltas.hungerDebt ?? 0} />
+              <Delta label="Втома" value={result.deltas.fatigue ?? 0} />
             </View>
             {result.event ? (
               <View style={styles.eventBox}>
@@ -1679,6 +1770,11 @@ export default function HomeScreen() {
               <ThemedText type="defaultSemiBold" style={styles.modalSectionTitle}>
                 Успіх
               </ThemedText>
+              {choiceDetail.choice.minHealth ? (
+                <ThemedText style={styles.choiceLockedText}>
+                  Мін. здоровʼя: {choiceDetail.choice.minHealth}
+                </ThemedText>
+              ) : null}
               <Delta label="Гроші" value={choiceDetail.choice.success.money ?? 0} />
               <Delta label="Репутація" value={choiceDetail.choice.success.reputation ?? 0} />
               <Delta label="Сила/Вміння" value={choiceDetail.choice.success.skill ?? 0} />
@@ -1923,6 +2019,10 @@ const styles = StyleSheet.create({
   choicePickCornerText: {
     color: '#1C1305',
     fontWeight: '700',
+  },
+  choiceLockedText: {
+    color: 'rgba(22,20,16,0.6)',
+    fontSize: 11,
   },
   choiceChance: {
     color: 'rgba(22,20,16,0.55)',
