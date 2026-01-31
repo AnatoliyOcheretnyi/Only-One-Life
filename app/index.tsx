@@ -29,6 +29,7 @@ type Stats = {
   family: number;
   hungerDebt: number;
   fatigue: number;
+  luck: number;
 };
 
 type Effects = Partial<Stats>;
@@ -73,7 +74,13 @@ const BASE_UPKEEP = -1;
 const MIN_HEALTH_FOR_FAMILY = 8;
 const MIN_HEALTH_FOR_COMBAT = 6;
 
-const clamp = (value: number, min = 0, max = 1) => Math.max(min, Math.min(max, value));
+const clamp = (value: number, min = 0, max = 1) =>
+  Number.isFinite(value) ? Math.max(min, Math.min(max, value)) : min;
+
+const normalizeStats = (stats: Stats): Stats => ({
+  ...stats,
+  luck: Number.isFinite(stats.luck) ? stats.luck : 0,
+});
 
 type Character = {
   id: string;
@@ -99,6 +106,7 @@ const characters: Character[] = [
       family: 0,
       hungerDebt: 0,
       fatigue: 0,
+      luck: 0,
     },
     image: require('../src/assets/charecters/syrota.png'),
   },
@@ -116,6 +124,7 @@ const characters: Character[] = [
       family: 0,
       hungerDebt: 0,
       fatigue: 0,
+      luck: 0,
     },
     image: require('../src/assets/charecters/uchen.png'),
   },
@@ -133,6 +142,7 @@ const characters: Character[] = [
       family: 0,
       hungerDebt: 0,
       fatigue: 0,
+      luck: 0,
     },
     image: require('../src/assets/charecters/bizhenec.png'),
   },
@@ -150,6 +160,7 @@ const characters: Character[] = [
       family: 0,
       hungerDebt: 0,
       fatigue: 0,
+      luck: 0,
     },
     image: require('../src/assets/charecters/selianyn.png'),
   },
@@ -180,8 +191,8 @@ const scenes: Scene[] = [
         baseChance: 0.35,
         successText: 'Бригадир погоджується. Ти виглядаєш сміливо.',
         failText: 'Він сміється і проганяє тебе.',
-        success: { money: 5, reputation: 2 },
-        fail: { reputation: -1 },
+        success: { money: 5, reputation: 2, luck: 1 },
+        fail: { reputation: -1, luck: -1 },
       },
       {
         id: 'ask-apprentice',
@@ -220,8 +231,8 @@ const scenes: Scene[] = [
         baseChance: 0.55,
         successText: 'Ти доставляєш пакунок і отримуєш платню.',
         failText: 'Тебе зупиняють вартові. Ти тікаєш, але втрачаєш обличчя.',
-        success: { money: 6, reputation: -1 },
-        fail: { reputation: -2, health: -1 },
+        success: { money: 6, reputation: -1, luck: 1 },
+        fail: { reputation: -2, health: -1, luck: -1 },
       },
       {
         id: 'refuse',
@@ -242,8 +253,8 @@ const scenes: Scene[] = [
         baseChance: 0.4,
         successText: 'Він погоджується на більшу частку.',
         failText: 'Він ображається і відходить.',
-        success: { money: 8, reputation: -1 },
-        fail: { reputation: -2 },
+        success: { money: 8, reputation: -1, luck: 1 },
+        fail: { reputation: -2, luck: -1 },
       },
       {
         id: 'tip-guards',
@@ -253,8 +264,8 @@ const scenes: Scene[] = [
         baseChance: 0.35,
         successText: 'Варта вдячна. Твоє імʼя звучить краще.',
         failText: 'Контрабандист дізнається і мститься.',
-        success: { reputation: 3 },
-        fail: { health: -2, money: -1 },
+        success: { reputation: 3, luck: 1 },
+        fail: { health: -2, money: -1, luck: -1 },
       },
     ],
   },
@@ -1189,8 +1200,8 @@ const scenes: Scene[] = [
         baseChance: 0.45,
         successText: 'Натовп аплодує твоєму виступу.',
         failText: 'Тебе освистують.',
-        success: { reputation: 3 },
-        fail: { reputation: -2 },
+        success: { reputation: 3, luck: 1 },
+        fail: { reputation: -2, luck: -1 },
       },
       {
         id: 'sell-trinkets',
@@ -2422,13 +2433,13 @@ const events: WorldEvent[] = [
     id: 'good-harvest',
     title: 'Добрий урожай',
     text: 'Ціни на зерно падають. Їжа дешевшає.',
-    effects: { money: 2, health: 1 },
+    effects: { money: 2, health: 1, luck: 1 },
   },
   {
     id: 'market-fraud',
     title: 'Ринкове шахрайство',
     text: 'Тебе обманюють на вазі. Частина грошей зникає.',
-    effects: { money: -3, reputation: -1 },
+    effects: { money: -3, reputation: -1, luck: -1 },
   },
   {
     id: 'fever',
@@ -2440,7 +2451,7 @@ const events: WorldEvent[] = [
     id: 'patron-gift',
     title: 'Покровительський дар',
     text: 'Місцевий впливовий знайомий допомагає тобі.',
-    effects: { money: 4, reputation: 2 },
+    effects: { money: 4, reputation: 2, luck: 1 },
   },
   {
     id: 'brawl',
@@ -2458,7 +2469,7 @@ const events: WorldEvent[] = [
     id: 'storm',
     title: 'Буря',
     text: 'Негода нищить припаси і плани.',
-    effects: { money: -2, health: -1 },
+    effects: { money: -2, health: -1, luck: -1 },
   },
   {
     id: 'tax-collector',
@@ -2470,7 +2481,7 @@ const events: WorldEvent[] = [
     id: 'lost-purse',
     title: 'Втрачений гаманець',
     text: 'Хтось губить гаманець поруч із тобою.',
-    effects: { money: 3, reputation: -1 },
+    effects: { money: 3, reputation: -1, luck: 1 },
   },
   {
     id: 'free-soup',
@@ -2524,7 +2535,7 @@ const events: WorldEvent[] = [
     id: 'lucky-find',
     title: 'Щаслива знахідка',
     text: 'Ти знаходиш корисну річ.',
-    effects: { money: 1, skill: 1 },
+    effects: { money: 1, skill: 1, luck: 2 },
   },
   {
     id: 'small-feast',
@@ -2590,6 +2601,7 @@ const applyEffects = (stats: Stats, effects: Effects): Stats => ({
   family: stats.family + (effects.family ?? 0),
   hungerDebt: stats.hungerDebt + (effects.hungerDebt ?? 0),
   fatigue: stats.fatigue + (effects.fatigue ?? 0),
+  luck: stats.luck + (effects.luck ?? 0),
 });
 
 const shuffle = <T,>(items: T[]) => {
@@ -2661,6 +2673,7 @@ const defaultStats: Stats = {
   family: 0,
   hungerDebt: 0,
   fatigue: 0,
+  luck: 0,
 };
 
 const getChance = (choice: Choice, stats: Stats) => {
@@ -2674,9 +2687,34 @@ const getChance = (choice: Choice, stats: Stats) => {
     stats.health * 0.01 -
     stats.money * 0.003 -
     stats.fatigue * fatigueFactor -
-    penalty;
+    penalty +
+    stats.luck * 0.01;
   return clamp(choice.baseChance + modifier, 0.1, 0.95);
 };
+
+const getMoneyRange = (choice: Choice, stats: Stats) => {
+  const base = choice.success.money ?? 0;
+  if (base <= 0) return null;
+  const skillBonus = Math.min(2, Math.floor(stats.skill / 5));
+  const luckBonus = Math.min(3, Math.floor(stats.luck / 2));
+  const maxBonus = skillBonus + luckBonus + 1;
+  const max = base + maxBonus;
+  if (max <= base) return null;
+  return { min: base, max };
+};
+
+const effectsEqual = (a: Effects, b: Effects) => {
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  for (const key of keys) {
+    const av = (a as Record<string, number>)[key] ?? 0;
+    const bv = (b as Record<string, number>)[key] ?? 0;
+    if (av !== bv) return false;
+  }
+  return true;
+};
+
+const isNeutralChoice = (choice: Choice) =>
+  choice.successText === choice.failText && effectsEqual(choice.success, choice.fail);
 
 const getEnding = (stats: Stats, reason: string) => {
   if (stats.health <= 0) {
@@ -2765,6 +2803,7 @@ export default function HomeScreen() {
     title: string;
     text: string;
     deltas: Effects;
+    moneyBreakdown?: { label: string; value: number }[];
     event?: WorldEvent;
   } | null>(null);
   const [eventDeck, setEventDeck] = useState<WorldEvent[]>(() => initialEventDeck);
@@ -2778,6 +2817,15 @@ export default function HomeScreen() {
   );
   const [effectType, setEffectType] = useState<'rain' | 'snow' | 'leaves' | null>(null);
   const [effectUntilTurn, setEffectUntilTurn] = useState<number>(0);
+
+  const rollInitialLuck = () => Math.floor(Math.random() * 5);
+  const safeStats = normalizeStats(stats);
+
+  useEffect(() => {
+    if (!Number.isFinite(stats.luck)) {
+      setStats((prev) => normalizeStats(prev));
+    }
+  }, [stats.luck]);
 
   useEffect(() => {
     const loop = Animated.loop(
@@ -2812,23 +2860,25 @@ export default function HomeScreen() {
 
   const chanceMap = useMemo(() => {
     return scene.choices.reduce<Record<string, number>>((acc, choice) => {
-      acc[choice.id] = getChance(choice, stats);
+      acc[choice.id] = getChance(choice, safeStats);
       return acc;
     }, {});
-  }, [scene, stats]);
+  }, [scene, safeStats]);
 
   const handleChoice = (choice: Choice) => {
     if (gameOver) return;
-    if (choice.minHealth && stats.health < choice.minHealth) return;
+    if (choice.minHealth && safeStats.health < choice.minHealth) return;
     const chance = chanceMap[choice.id];
     const success = Math.random() < chance;
     const effects = success ? choice.success : choice.fail;
     const adjustedEffects = { ...effects };
     if (success && adjustedEffects.money && adjustedEffects.money > 0) {
-      const bonus = Math.min(2, Math.floor(stats.skill / 5));
-      adjustedEffects.money += bonus;
+      const skillBonus = Math.min(2, Math.floor(safeStats.skill / 5));
+      const luckBonus = Math.min(3, Math.floor(safeStats.luck / 2));
+      const variability = Math.random() < 0.45 ? 1 : 0;
+      adjustedEffects.money += skillBonus + luckBonus + variability;
     }
-    const afterChoice = applyEffects(stats, adjustedEffects);
+    const afterChoice = applyEffects(safeStats, adjustedEffects);
     const upkeep = BASE_UPKEEP - afterChoice.family;
     const upkeepEffects: Effects = { money: upkeep };
     const nextStats = applyEffects(afterChoice, upkeepEffects);
@@ -2854,6 +2904,7 @@ export default function HomeScreen() {
       nextStats.skill = updated.skill;
       nextStats.health = updated.health;
       nextStats.age = updated.age;
+      nextStats.luck = updated.luck;
       setEventIndex((prev) => prev + 1);
       setLog((prev) => [
         `Подія: ${currentEvent.title}. ${currentEvent.text}`,
@@ -2891,6 +2942,11 @@ export default function HomeScreen() {
     let hungerDelta = 0;
     let fatigueDelta = 0;
     let hungerHealthLoss = 0;
+    const moneyBreakdown: { label: string; value: number }[] = [];
+    if (adjustedEffects.money && adjustedEffects.money !== 0) {
+      moneyBreakdown.push({ label: 'Результат вибору', value: adjustedEffects.money });
+    }
+    moneyBreakdown.push({ label: 'Утримання', value: upkeep });
     if (nextStats.money <= 0) {
       nextStats.hungerDebt += 1;
       hungerDelta = 1;
@@ -2903,6 +2959,7 @@ export default function HomeScreen() {
       nextStats.hungerDebt -= pay;
       hungerDelta = -pay;
       if (pay > 0) {
+        moneyBreakdown.push({ label: 'Їжа', value: -pay });
         resultLine += `, їжа -${pay}`;
       }
     }
@@ -2917,6 +2974,17 @@ export default function HomeScreen() {
       resultLine += ', втома -1 здоровʼя';
     }
     fatigueDelta = nextStats.fatigue - beforeFatigue;
+
+    const luckRoll = Math.random();
+    let luckDelta = 0;
+    if (luckRoll < 0.15) {
+      luckDelta = 1;
+    } else if (luckRoll > 0.92) {
+      luckDelta = -1;
+    }
+    if (luckDelta !== 0) {
+      nextStats.luck += luckDelta;
+    }
 
     let lifeOver = nextStats.health <= 0 || nextTurn > MAX_TURNS;
     if (nextStats.health <= 0) {
@@ -2955,15 +3023,24 @@ export default function HomeScreen() {
       setScene(nextScene);
     }
     setGameOver(lifeOver);
+    if (eventResult?.effects.money) {
+      moneyBreakdown.push({
+        label: `Подія: ${eventResult.title}`,
+        value: eventResult.effects.money,
+      });
+    }
+    const moneyNet = moneyBreakdown.reduce((sum, item) => sum + item.value, 0);
     setResult({
       title: success ? 'Успіх' : 'Невдача',
       text: resultText,
       deltas: {
         ...adjustedEffects,
-        money: (adjustedEffects.money ?? 0) + upkeep,
+        money: moneyNet,
         hungerDebt: hungerDelta,
         fatigue: fatigueDelta,
+        luck: luckDelta,
       },
+      moneyBreakdown,
       event: eventResult,
     });
   };
@@ -2971,9 +3048,10 @@ export default function HomeScreen() {
   const handleStart = () => {
     if (!selectedCharacter) return;
     const startingStats = { ...selectedCharacter.stats };
+    startingStats.luck = rollInitialLuck();
     const startingStage = stageLabel(startingStats);
     const startingSeason = seasonFromTurn(1);
-    setStats(startingStats);
+    setStats(normalizeStats(startingStats));
     setTurn(1);
     setLog([]);
     const freshSceneDeck = buildSceneDeck();
@@ -2998,9 +3076,10 @@ export default function HomeScreen() {
 
   const resetLife = () => {
     const resetStats = selectedCharacter ? { ...selectedCharacter.stats } : { ...defaultStats };
+    resetStats.luck = rollInitialLuck();
     const resetStage = stageLabel(resetStats);
     const resetSeason = seasonFromTurn(1);
-    setStats(resetStats);
+    setStats(normalizeStats(resetStats));
     setTurn(1);
     setLog([]);
     const freshSceneDeck = buildSceneDeck();
@@ -3026,7 +3105,7 @@ export default function HomeScreen() {
   };
 
   const exitToStart = () => {
-    setStats(defaultStats);
+    setStats(normalizeStats(defaultStats));
     setTurn(1);
     setLog([]);
     const freshDeck = buildSceneDeck();
@@ -3238,6 +3317,7 @@ export default function HomeScreen() {
           <StatInline label="Здоровʼя" value={stats.health} />
           <StatInline label="Голод" value={stats.hungerDebt} />
           <StatInline label="Втома" value={stats.fatigue} />
+          <StatInline label="Удача" value={stats.luck} />
           <StatInline label="Вік" value={stats.age} />
           <StatInline label="Сімʼя" value={stats.family} />
         </View>
@@ -3279,11 +3359,16 @@ export default function HomeScreen() {
               <View style={styles.choiceGrid}>
                 {scene.choices.map((choice) => {
                   const chance = Math.round(chanceMap[choice.id] * 100);
+                  const neutral = isNeutralChoice(choice);
                   return (
                   <View key={choice.id} style={styles.choiceRow}>
                     <View style={styles.choiceRowText}>
                       <ThemedText type="defaultSemiBold">{choice.label}</ThemedText>
-                      <ThemedText style={styles.choiceChance}>Шанс: ~{chance}%</ThemedText>
+                      {!neutral ? (
+                        <ThemedText style={styles.choiceChance}>Шанс: ~{chance}%</ThemedText>
+                      ) : (
+                        <ThemedText style={styles.choiceChance}>Без ризику</ThemedText>
+                      )}
                     </View>
                     {choice.minHealth && stats.health < choice.minHealth ? (
                       <ThemedText style={styles.choiceLockedText}>
@@ -3437,7 +3522,25 @@ export default function HomeScreen() {
               <Delta label="Сімʼя" value={result.deltas.family ?? 0} />
               <Delta label="Голод" value={result.deltas.hungerDebt ?? 0} />
               <Delta label="Втома" value={result.deltas.fatigue ?? 0} />
+              <Delta label="Удача" value={result.deltas.luck ?? 0} />
             </View>
+            {result.moneyBreakdown && result.moneyBreakdown.length > 0 ? (
+              <View style={styles.deltaList}>
+                <ThemedText type="defaultSemiBold" style={styles.modalSectionTitle}>
+                  Транзакції грошей
+                </ThemedText>
+                {result.moneyBreakdown.map((item) => (
+                  <View key={item.label} style={styles.deltaRow}>
+                    <ThemedText style={styles.deltaLabel}>{item.label}</ThemedText>
+                    <ThemedText
+                      style={item.value >= 0 ? styles.deltaPositive : styles.deltaNegative}>
+                      {item.value > 0 ? '+' : ''}
+                      {item.value}
+                    </ThemedText>
+                  </View>
+                ))}
+              </View>
+            ) : null}
             {result.event ? (
               <View style={styles.eventBox}>
                 <ThemedText type="defaultSemiBold" style={styles.eventTitle}>
@@ -3450,6 +3553,7 @@ export default function HomeScreen() {
                   <Delta label="Сила/Вміння" value={result.event.effects.skill ?? 0} />
                   <Delta label="Здоровʼя" value={result.event.effects.health ?? 0} />
                   <Delta label="Сімʼя" value={result.event.effects.family ?? 0} />
+                  <Delta label="Удача" value={result.event.effects.luck ?? 0} />
                 </View>
               </View>
             ) : null}
@@ -3468,34 +3572,84 @@ export default function HomeScreen() {
               </ThemedText>
               <ThemedText style={styles.resultText}>{choiceDetail.choice.description}</ThemedText>
             </View>
-            <ThemedText style={styles.choiceChance}>Шанс: ~{choiceDetail.chance}%</ThemedText>
-            <View style={styles.deltaList}>
-              <ThemedText type="defaultSemiBold" style={styles.modalSectionTitle}>
-                Успіх
-              </ThemedText>
-              {choiceDetail.choice.minHealth ? (
-                <ThemedText style={styles.choiceLockedText}>
-                  Мін. здоровʼя: {choiceDetail.choice.minHealth}
+            {!isNeutralChoice(choiceDetail.choice) ? (
+              <ThemedText style={styles.choiceChance}>Шанс: ~{choiceDetail.chance}%</ThemedText>
+            ) : (
+              <ThemedText style={styles.choiceChance}>Без ризику</ThemedText>
+            )}
+            {isNeutralChoice(choiceDetail.choice) ? (
+              <View style={styles.deltaList}>
+                <ThemedText type="defaultSemiBold" style={styles.modalSectionTitle}>
+                  Без ризику
                 </ThemedText>
-              ) : null}
-              <Delta label="Гроші" value={choiceDetail.choice.success.money ?? 0} />
-              <Delta label="Репутація" value={choiceDetail.choice.success.reputation ?? 0} />
-              <Delta label="Сила/Вміння" value={choiceDetail.choice.success.skill ?? 0} />
-              <Delta label="Здоровʼя" value={choiceDetail.choice.success.health ?? 0} />
-              <Delta label="Сімʼя" value={choiceDetail.choice.success.family ?? 0} />
-              <ThemedText style={styles.resultText}>{choiceDetail.choice.successText}</ThemedText>
-            </View>
-            <View style={styles.deltaList}>
-              <ThemedText type="defaultSemiBold" style={styles.modalSectionTitle}>
-                Невдача
-              </ThemedText>
-              <Delta label="Гроші" value={choiceDetail.choice.fail.money ?? 0} />
-              <Delta label="Репутація" value={choiceDetail.choice.fail.reputation ?? 0} />
-              <Delta label="Сила/Вміння" value={choiceDetail.choice.fail.skill ?? 0} />
-              <Delta label="Здоровʼя" value={choiceDetail.choice.fail.health ?? 0} />
-              <Delta label="Сімʼя" value={choiceDetail.choice.fail.family ?? 0} />
-              <ThemedText style={styles.resultText}>{choiceDetail.choice.failText}</ThemedText>
-            </View>
+                {choiceDetail.choice.minHealth ? (
+                  <ThemedText style={styles.choiceLockedText}>
+                    Мін. здоровʼя: {choiceDetail.choice.minHealth}
+                  </ThemedText>
+                ) : null}
+                {(() => {
+                  const range = getMoneyRange(choiceDetail.choice, safeStats);
+                  if (range) {
+                    return (
+                      <ThemedText style={styles.choiceMoneyRange}>
+                        Гроші: +{range.min}…+{range.max}
+                      </ThemedText>
+                    );
+                  }
+                  return <Delta label="Гроші" value={choiceDetail.choice.success.money ?? 0} />;
+                })()}
+                <Delta label="Репутація" value={choiceDetail.choice.success.reputation ?? 0} />
+                <Delta label="Сила/Вміння" value={choiceDetail.choice.success.skill ?? 0} />
+                <Delta label="Здоровʼя" value={choiceDetail.choice.success.health ?? 0} />
+                <Delta label="Сімʼя" value={choiceDetail.choice.success.family ?? 0} />
+                <Delta label="Удача" value={choiceDetail.choice.success.luck ?? 0} />
+                <ThemedText style={styles.resultText}>
+                  {choiceDetail.choice.successText}
+                </ThemedText>
+              </View>
+            ) : (
+              <>
+                <View style={styles.deltaList}>
+                  <ThemedText type="defaultSemiBold" style={styles.modalSectionTitle}>
+                    Успіх
+                  </ThemedText>
+                  {choiceDetail.choice.minHealth ? (
+                    <ThemedText style={styles.choiceLockedText}>
+                      Мін. здоровʼя: {choiceDetail.choice.minHealth}
+                    </ThemedText>
+                  ) : null}
+                  {(() => {
+                    const range = getMoneyRange(choiceDetail.choice, safeStats);
+                    if (range) {
+                      return (
+                        <ThemedText style={styles.choiceMoneyRange}>
+                          Гроші: +{range.min}…+{range.max}
+                        </ThemedText>
+                      );
+                    }
+                    return <Delta label="Гроші" value={choiceDetail.choice.success.money ?? 0} />;
+                  })()}
+                  <Delta label="Репутація" value={choiceDetail.choice.success.reputation ?? 0} />
+                  <Delta label="Сила/Вміння" value={choiceDetail.choice.success.skill ?? 0} />
+                  <Delta label="Здоровʼя" value={choiceDetail.choice.success.health ?? 0} />
+                  <Delta label="Сімʼя" value={choiceDetail.choice.success.family ?? 0} />
+                  <Delta label="Удача" value={choiceDetail.choice.success.luck ?? 0} />
+                  <ThemedText style={styles.resultText}>{choiceDetail.choice.successText}</ThemedText>
+                </View>
+                <View style={styles.deltaList}>
+                  <ThemedText type="defaultSemiBold" style={styles.modalSectionTitle}>
+                    Невдача
+                  </ThemedText>
+                  <Delta label="Гроші" value={choiceDetail.choice.fail.money ?? 0} />
+                  <Delta label="Репутація" value={choiceDetail.choice.fail.reputation ?? 0} />
+                  <Delta label="Сила/Вміння" value={choiceDetail.choice.fail.skill ?? 0} />
+                  <Delta label="Здоровʼя" value={choiceDetail.choice.fail.health ?? 0} />
+                  <Delta label="Сімʼя" value={choiceDetail.choice.fail.family ?? 0} />
+                  <Delta label="Удача" value={choiceDetail.choice.fail.luck ?? 0} />
+                  <ThemedText style={styles.resultText}>{choiceDetail.choice.failText}</ThemedText>
+                </View>
+              </>
+            )}
             <Pressable onPress={() => setChoiceDetail(null)} style={styles.resultButton}>
               <ThemedText style={styles.resultButtonText}>Закрити</ThemedText>
             </Pressable>
@@ -3733,6 +3887,11 @@ const styles = StyleSheet.create({
   choiceChance: {
     color: 'rgba(22,20,16,0.55)',
     fontSize: 12,
+  },
+  choiceMoneyRange: {
+    color: 'rgba(22,20,16,0.6)',
+    fontSize: 12,
+    fontWeight: '600',
   },
   ending: {
     gap: 12,
