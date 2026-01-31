@@ -1,5 +1,14 @@
 import { useMemo, useRef, useState } from 'react';
-import { Dimensions, FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  Animated,
+  Dimensions,
+  FlatList,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -56,6 +65,7 @@ type Character = {
   description: string;
   lore: string;
   stats: Stats;
+  image: number;
 };
 
 const characters: Character[] = [
@@ -65,6 +75,7 @@ const characters: Character[] = [
     description: 'Витривалий, але без грошей і звʼязків.',
     lore: 'Ти виріс на холодних вулицях і навчився виживати без підтримки. Твої навички грубі, але надійні.',
     stats: { money: 2, reputation: 1, skill: 2, health: 12, age: 16, family: 0 },
+    image: require('../src/assets/charecters/syrota.png'),
   },
   {
     id: 'apprentice',
@@ -72,6 +83,7 @@ const characters: Character[] = [
     description: 'Трохи вмінь та помірна репутація.',
     lore: 'Ти бачив ремесло зблизька, але справжня майстерність ще попереду. Люди ставляться до тебе з обережною повагою.',
     stats: { money: 4, reputation: 3, skill: 3, health: 10, age: 17, family: 0 },
+    image: require('../src/assets/charecters/uchen.png'),
   },
   {
     id: 'refugee',
@@ -79,6 +91,7 @@ const characters: Character[] = [
     description: 'Мало грошей, але сильне здоровʼя.',
     lore: 'Після втечі від війни ти втратив дім, але зберіг витривалість. Ти не маєш звʼязків, зате маєш силу.',
     stats: { money: 3, reputation: 1, skill: 1, health: 14, age: 18, family: 0 },
+    image: require('../src/assets/charecters/bizhenec.png'),
   },
   {
     id: 'farmer',
@@ -86,6 +99,7 @@ const characters: Character[] = [
     description: 'Звик до важкої праці, мало грошей, але міцне здоровʼя.',
     lore: 'Ти виріс на землі та звик до важкої праці. Вмієш витримувати труднощі, але багатства не маєш.',
     stats: { money: 3, reputation: 2, skill: 2, health: 12, age: 20, family: 0 },
+    image: require('../src/assets/charecters/selianyn.png'),
   },
 ];
 
@@ -924,6 +938,7 @@ export default function HomeScreen() {
   const [eventDeck, setEventDeck] = useState<WorldEvent[]>(() => initialEventDeck);
   const [eventIndex, setEventIndex] = useState(0);
   const characterListRef = useRef<FlatList<Character>>(null);
+  const characterScrollX = useRef(new Animated.Value(0)).current;
   const [detailCharacter, setDetailCharacter] = useState<Character | null>(null);
 
   const chanceMap = useMemo(() => {
@@ -1089,7 +1104,7 @@ export default function HomeScreen() {
             Стартові стати визначають твої перші шанси.
           </ThemedText>
           <View style={styles.carouselWrap}>
-            <FlatList
+            <Animated.FlatList
               ref={characterListRef}
               data={characters}
               keyExtractor={(item) => item.id}
@@ -1100,13 +1115,33 @@ export default function HomeScreen() {
               snapToAlignment="start"
               decelerationRate="fast"
               showsHorizontalScrollIndicator={false}
+              onScroll={Animated.event(
+                [{ nativeEvent: { contentOffset: { x: characterScrollX } } }],
+                { useNativeDriver: true }
+              )}
+              scrollEventThrottle={16}
               getItemLayout={(_, index) => ({
                 length: snapInterval,
                 offset: snapInterval * index,
                 index,
               })}
-              renderItem={({ item }) => {
+              renderItem={({ item, index }) => {
                 const active = item.id === selectedCharacter?.id;
+                const inputRange = [
+                  (index - 1) * snapInterval,
+                  index * snapInterval,
+                  (index + 1) * snapInterval,
+                ];
+                const scale = characterScrollX.interpolate({
+                  inputRange,
+                  outputRange: [0.96, 1, 0.96],
+                  extrapolate: 'clamp',
+                });
+                const opacity = characterScrollX.interpolate({
+                  inputRange,
+                  outputRange: [0.7, 1, 0.7],
+                  extrapolate: 'clamp',
+                });
                 return (
                   <Pressable
                     onPress={() => setSelectedCharacter(item)}
@@ -1144,6 +1179,35 @@ export default function HomeScreen() {
             disabled={!selectedCharacter}>
             <ThemedText style={styles.primaryButtonText}>Почати життя</ThemedText>
           </Pressable>
+        </View>
+        <View style={styles.characterPreviewWrap}>
+          {characters.map((item, index) => {
+            const inputRange = [
+              (index - 1) * snapInterval,
+              index * snapInterval,
+              (index + 1) * snapInterval,
+            ];
+            const scale = characterScrollX.interpolate({
+              inputRange,
+              outputRange: [0.9, 1.05, 0.9],
+              extrapolate: 'clamp',
+            });
+            const opacity = characterScrollX.interpolate({
+              inputRange,
+              outputRange: [0, 1, 0],
+              extrapolate: 'clamp',
+            });
+            return (
+              <Animated.Image
+                key={item.id}
+                source={item.image}
+                style={[
+                  styles.characterPreview,
+                  { transform: [{ scale }], opacity },
+                ]}
+              />
+            );
+          })}
         </View>
         {detailCharacter ? (
           <View style={styles.resultOverlay}>
@@ -1572,6 +1636,28 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(216,179,106,0.45)',
     backgroundColor: 'rgba(255,246,229,0.72)',
     gap: 10,
+  },
+  characterArtWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 6,
+  },
+  characterArt: {
+    width: 120,
+    height: 140,
+    resizeMode: 'contain',
+  },
+  characterPreviewWrap: {
+    marginTop: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 220,
+  },
+  characterPreview: {
+    position: 'absolute',
+    width: 220,
+    height: 220,
+    resizeMode: 'contain',
   },
   characterName: {
     fontSize: 18,
