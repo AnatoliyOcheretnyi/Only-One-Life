@@ -820,14 +820,7 @@ export default function HomeScreen() {
             style={[
               styles.weatherTint,
               {
-                backgroundColor:
-                  effectType === 'snow'
-                    ? 'transparent'
-                    : effectType === 'rain'
-                      ? 'rgba(40,70,110,0.08)'
-                      : effectType === 'leaves'
-                        ? 'transparent'
-                      : 'rgba(220,220,220,0.08)',
+                backgroundColor: 'transparent',
               },
             ]}
           />
