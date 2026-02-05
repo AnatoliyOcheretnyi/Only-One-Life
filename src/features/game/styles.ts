@@ -134,52 +134,134 @@ export const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(28,19,5,0.12)',
+    borderColor: 'rgba(28,19,5,0.14)',
     backgroundColor: '#FFFBF4',
-    gap: 8,
+    gap: 6,
     width: '48%',
-    justifyContent: 'space-between',
-    minHeight: 118,
+    minHeight: 110,
   },
-  choiceRowText: {
+  choiceBody: {
+    flexGrow: 1,
+    gap: 6,
+  },
+  choiceHeader: {
     gap: 4,
   },
-  choiceDetailButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(28,19,5,0.2)',
-    marginTop: 6,
+  choiceTags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
   },
-  choiceDetailText: {
+  choiceTag: {
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(28,19,5,0.12)',
+    backgroundColor: 'rgba(255,255,255,0.75)',
+  },
+  choiceTagPath: {
+    borderColor: 'rgba(197,142,44,0.5)',
+    backgroundColor: 'rgba(216,179,106,0.18)',
+  },
+  choiceTagText: {
     color: 'rgba(28,19,5,0.8)',
+    fontSize: 10,
     fontWeight: '600',
   },
-  choicePickCorner: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(28,19,5,0.18)',
-    borderWidth: 1,
-    borderColor: 'rgba(28,19,5,0.25)',
+  choiceDescription: {
+    color: 'rgba(22,20,16,0.75)',
+    fontSize: 12,
   },
-  choicePickCornerText: {
-    color: '#1C1305',
-    fontWeight: '700',
+  choiceChanceRow: {
+    gap: 6,
+  },
+  choicePerksRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+  },
+  choicePerkChip: {
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 999,
+    backgroundColor: 'rgba(89,193,115,0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(89,193,115,0.45)',
+  },
+  choicePerkText: {
+    color: '#2F7A45',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  choiceChanceBar: {
+    height: 5,
+    borderRadius: 999,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(28,19,5,0.08)',
+  },
+  choiceChanceFill: {
+    height: '100%',
+    borderRadius: 999,
+  },
+  choiceChanceFillgood: {
+    backgroundColor: '#59C173',
+  },
+  choiceChanceFillwarn: {
+    backgroundColor: '#D8B36A',
+  },
+  choiceChanceFillbad: {
+    backgroundColor: '#E35D5B',
+  },
+  choiceActionButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: '#1C1305',
+    alignItems: 'center',
+  },
+  choiceActionButtonText: {
+    color: '#F6E7C8',
+    fontWeight: '600',
+  },
+  choiceActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 'auto',
+  },
+  choiceActionButtonCompact: {
+    flex: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: '#1C1305',
+    alignItems: 'center',
+  },
+  choiceActionButtonDisabled: {
+    opacity: 0.5,
+  },
+  choiceDetailButton: {
+    alignSelf: 'flex-start',
+    marginTop: 2,
+  },
+  choiceDetailInline: {
+    paddingHorizontal: 2,
+    paddingVertical: 4,
+  },
+  choiceDetailText: {
+    color: 'rgba(28,19,5,0.65)',
+    fontWeight: '600',
+    fontSize: 11,
   },
   choiceLockedText: {
     color: 'rgba(22,20,16,0.6)',
     fontSize: 11,
   },
   choiceChance: {
-    color: 'rgba(22,20,16,0.55)',
-    fontSize: 12,
+    color: 'rgba(22,20,16,0.65)',
+    fontSize: 11,
+    fontWeight: '600',
   },
   choiceMoneyRange: {
     color: 'rgba(22,20,16,0.6)',

@@ -4,7 +4,7 @@ import { ThemedText } from "@/src/components/themed-text";
 import { ThemedView } from "@/src/components/themed-view";
 import StatInline from "@/src/features/game/components/StatInline";
 import { styles } from "@/src/features/game/styles";
-import type { Choice, Scene, Stats } from "@/src/shared/types";
+import type { Choice, Path, Scene, Stats } from "@/src/shared/types";
 import { isNeutralChoice } from "@/src/shared/utils";
 
 type Ending = { title: string; text: string } | null;
@@ -25,6 +25,34 @@ type GameScreenProps = {
   onShowChoiceDetail: (choice: Choice, chance: number) => void;
   onResetLife: () => void;
   onExit: () => void;
+};
+
+const pathLabels: Record<Path, string> = {
+  craft: "Ремесло",
+  service: "Служба",
+  trade: "Торгівля",
+  crime: "Тінь",
+};
+
+const effortLabels: Record<NonNullable<Choice["effort"]>, string> = {
+  physical: "Фізично",
+  mental: "Розумово",
+  social: "Соціально",
+  rest: "Відпочинок",
+  neutral: "Нейтрально",
+};
+
+const statLabelsShort: Record<string, string> = {
+  money: "💰",
+  reputation: "⭐",
+  skill: "💪",
+  health: "❤️",
+  hungerDebt: "🍗",
+  fatigue: "😮‍💨",
+  luck: "🍀",
+  age: "⏳",
+  family: "👪",
+  karma: "К",
 };
 
 export default function GameScreen({
@@ -102,46 +130,109 @@ export default function GameScreen({
                 {scene.choices.map((choice) => {
                   const chance = Math.round(chanceMap[choice.id] * 100);
                   const neutral = isNeutralChoice(choice);
+                  const disabled =
+                    !!choice.minHealth && stats.health < choice.minHealth;
+                  const chanceTone =
+                    chance >= 70 ? "good" : chance >= 45 ? "warn" : "bad";
+                  const chanceFillStyle =
+                    chanceTone === "good"
+                      ? styles.choiceChanceFillgood
+                      : chanceTone === "warn"
+                        ? styles.choiceChanceFillwarn
+                        : styles.choiceChanceFillbad;
+                  const positiveEffects = Object.entries(choice.success).filter(
+                    ([, value]) => (value ?? 0) > 0,
+                  );
                   return (
                     <View key={choice.id} style={styles.choiceRow}>
-                      <View style={styles.choiceRowText}>
-                        <ThemedText type="defaultSemiBold">
-                          {choice.label}
+                      <View style={styles.choiceBody}>
+                        <View style={styles.choiceHeader}>
+                          <ThemedText type="defaultSemiBold" numberOfLines={1}>
+                            {choice.label}
+                          </ThemedText>
+                          <View style={styles.choiceTags}>
+                            {choice.path ? (
+                              <View
+                                style={[
+                                  styles.choiceTag,
+                                  styles.choiceTagPath,
+                                ]}
+                              >
+                                <ThemedText style={styles.choiceTagText}>
+                                  {pathLabels[choice.path]}
+                                </ThemedText>
+                              </View>
+                            ) : null}
+                            {choice.effort &&
+                            choice.effort !== "neutral" &&
+                            !choice.path ? (
+                              <View style={styles.choiceTag}>
+                                <ThemedText style={styles.choiceTagText}>
+                                  {effortLabels[choice.effort]}
+                                </ThemedText>
+                              </View>
+                            ) : null}
+                          </View>
+                        </View>
+                        <ThemedText
+                          style={styles.choiceDescription}
+                          numberOfLines={1}
+                        >
+                          {choice.description}
                         </ThemedText>
-                        {!neutral ? (
+                        {positiveEffects.length > 0 ? (
+                          <View style={styles.choicePerksRow}>
+                            {positiveEffects.slice(0, 3).map(([key, value]) => (
+                              <View key={key} style={styles.choicePerkChip}>
+                                <ThemedText style={styles.choicePerkText}>
+                                  {statLabelsShort[key] ?? key} +{value}
+                                </ThemedText>
+                              </View>
+                            ))}
+                          </View>
+                        ) : null}
+                        <View style={styles.choiceChanceRow}>
                           <ThemedText style={styles.choiceChance}>
-                            Шанс: ~{chance}%
+                            {neutral ? "Без ризику" : `~${chance}%`}
                           </ThemedText>
-                        ) : (
-                          <ThemedText style={styles.choiceChance}>
-                            Без ризику
+                          <View style={styles.choiceChanceBar}>
+                            <View
+                              style={[
+                                styles.choiceChanceFill,
+                                chanceFillStyle,
+                                { width: `${neutral ? 100 : chance}%` },
+                              ]}
+                            />
+                          </View>
+                        </View>
+                        {choice.minHealth && stats.health < choice.minHealth ? (
+                          <ThemedText style={styles.choiceLockedText}>
+                            Потрібно здоровʼя {choice.minHealth}
                           </ThemedText>
-                        )}
+                        ) : null}
                       </View>
-                      {choice.minHealth && stats.health < choice.minHealth ? (
-                        <ThemedText style={styles.choiceLockedText}>
-                          Потрібно здоровʼя {choice.minHealth}
-                        </ThemedText>
-                      ) : null}
-                      <Pressable
-                        onPress={() => onChoose(choice)}
-                        disabled={
-                          !!choice.minHealth && stats.health < choice.minHealth
-                        }
-                        style={styles.choicePickCorner}
-                      >
-                        <ThemedText style={styles.choicePickCornerText}>
-                          ✓
-                        </ThemedText>
-                      </Pressable>
-                      <Pressable
-                        onPress={() => onShowChoiceDetail(choice, chance)}
-                        style={styles.choiceDetailButton}
-                      >
-                        <ThemedText style={styles.choiceDetailText}>
-                          Деталі
-                        </ThemedText>
-                      </Pressable>
+                      <View style={styles.choiceActionsRow}>
+                        <Pressable
+                          onPress={() => onChoose(choice)}
+                          disabled={disabled}
+                          style={[
+                            styles.choiceActionButtonCompact,
+                            disabled && styles.choiceActionButtonDisabled,
+                          ]}
+                        >
+                          <ThemedText style={styles.choiceActionButtonText}>
+                            Обрати
+                          </ThemedText>
+                        </Pressable>
+                        <Pressable
+                          onPress={() => onShowChoiceDetail(choice, chance)}
+                          style={styles.choiceDetailInline}
+                        >
+                          <ThemedText style={styles.choiceDetailText}>
+                            Деталі
+                          </ThemedText>
+                        </Pressable>
+                      </View>
                     </View>
                   );
                 })}
