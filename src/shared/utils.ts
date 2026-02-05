@@ -33,10 +33,10 @@ export const applyEffects = (stats: Stats, effects: Effects): Stats => ({
   luck: stats.luck + (effects.luck ?? 0),
 });
 
-export const shuffle = <T,>(items: T[]) => {
+export const shuffle = <T,>(items: T[], rng: () => number = Math.random) => {
   const copy = [...items];
   for (let i = copy.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rng() * (i + 1));
     [copy[i], copy[j]] = [copy[j], copy[i]];
   }
   return copy;

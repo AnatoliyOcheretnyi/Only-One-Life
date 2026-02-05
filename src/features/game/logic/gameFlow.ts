@@ -2,7 +2,7 @@ import { scenes } from "@/src/features/game/data/scenes";
 import type { Scene, Season, Stage, Stats } from "@/src/shared/types";
 import { canUseStage, isSceneForSeason, shuffle } from "@/src/shared/utils";
 
-export const buildSceneDeck = () => {
+export const buildSceneDeck = (rng: () => number = Math.random) => {
   const buckets: Record<Stage, Scene[]> = {
     Early: [],
     Rising: [],
@@ -14,10 +14,10 @@ export const buildSceneDeck = () => {
     buckets[stage].push(scene);
   });
   return [
-    ...shuffle(buckets.Early),
-    ...shuffle(buckets.Rising),
-    ...shuffle(buckets.Established),
-    ...shuffle(buckets.Noble),
+    ...shuffle(buckets.Early, rng),
+    ...shuffle(buckets.Rising, rng),
+    ...shuffle(buckets.Established, rng),
+    ...shuffle(buckets.Noble, rng),
   ];
 };
 
