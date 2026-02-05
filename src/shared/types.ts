@@ -8,9 +8,13 @@ export type Stats = {
   hungerDebt: number;
   fatigue: number;
   luck: number;
+  karma: number;
 };
 
 export type Effects = Partial<Stats>;
+
+export type Path = 'craft' | 'service' | 'trade' | 'crime';
+export type ScenePhase = 'start' | 'early' | 'mid' | 'late';
 
 export type Choice = {
   id: string;
@@ -19,6 +23,7 @@ export type Choice = {
   baseChance: number;
   minHealth?: number;
   effort?: 'physical' | 'mental' | 'social' | 'rest' | 'neutral';
+  path?: Path;
   successText: string;
   failText: string;
   success: Effects;
@@ -29,6 +34,12 @@ export type Scene = {
   id: string;
   title: string;
   text: string;
+  arc?: number;
+  phase?: ScenePhase;
+  vector?: Path | 'neutral';
+  backlog?: boolean;
+  minTurn?: number;
+  maxTurn?: number;
   minStage?: Stage;
   season?: Season | Season[];
   forCharacter?: string[];

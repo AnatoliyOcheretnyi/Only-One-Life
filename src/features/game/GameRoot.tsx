@@ -86,6 +86,7 @@ export default function HomeScreen() {
         luck: "Удача",
         age: "Вік",
         family: "Сімʼя",
+        karma: "Карма",
       }
     : {
         money: "💰",
@@ -97,6 +98,7 @@ export default function HomeScreen() {
         luck: "🍀",
         age: "⏳",
         family: "👪",
+        karma: "К",
       };
   const insetTop = Math.max(12, insets.top + 6);
   const ending = gameState.gameOver

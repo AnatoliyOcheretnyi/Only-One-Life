@@ -67,6 +67,7 @@ export default function GameScreen({
           <StatInline label={statLabels.luck} value={stats.luck} />
           <StatInline label={statLabels.age} value={stats.age} />
           <StatInline label={statLabels.family} value={stats.family} />
+          <StatInline label={statLabels.karma} value={stats.karma} />
         </View>
       </ThemedView>
       {heroImage ? (

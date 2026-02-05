@@ -191,6 +191,7 @@ export default function ChooseCharacterScreen({
               />
               <StatRow label="Сила/Вміння" value={detailCharacter.stats.skill} />
               <StatRow label="Здоровʼя" value={detailCharacter.stats.health} />
+              <StatRow label="Карма" value={detailCharacter.stats.karma} />
             </View>
             <View style={styles.choiceList}>
               <Pressable onPress={onCloseDetail} style={styles.secondaryButton}>

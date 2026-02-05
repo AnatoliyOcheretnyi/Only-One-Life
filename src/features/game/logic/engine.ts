@@ -1,14 +1,19 @@
-import { events } from "@/src/features/game/data/events";
+import { events, majorEvents } from "@/src/features/game/data/events";
 import { effectFromText, snowIntensityFromText } from "@/src/features/game/effects";
-import { buildSceneDeck, getNextScene } from "@/src/features/game/logic/gameFlow";
+import {
+  buildSceneDeck,
+  getNextScene,
+  phaseFromTurn,
+  pickStartScene,
+} from "@/src/features/game/logic/gameFlow";
 import {
   BASE_UPKEEP,
-  EVENT_EVERY_TURNS,
   MAX_TURNS,
 } from "@/src/shared/constants";
 import type {
   Choice,
   Effects,
+  Path,
   Scene,
   Stats,
   WorldEvent,
@@ -29,6 +34,7 @@ export type Rng = () => number;
 export type GameState = {
   characterId?: string | null;
   stats: Stats;
+  pathScores: Record<Path, number>;
   turn: number;
   log: string[];
   sceneDeck: Scene[];
@@ -36,8 +42,10 @@ export type GameState = {
   scene: Scene;
   eventDeck: WorldEvent[];
   eventIndex: number;
+  nextEventTurn: number;
   gameOver: boolean;
   endingReason: string;
+  majorEventUsed: boolean;
   effectType: EffectType;
   effectUntilTurn: number;
   snowIntensity: SnowIntensity;
@@ -93,26 +101,46 @@ export const createGameStateFromStats = ({
   snowIntensity?: SnowIntensity;
 }): GameState => {
   const safeStats = normalizeStats(stats);
-  const deck = sceneDeck ?? buildSceneDeck(rng);
+  const deck = sceneDeck ?? buildSceneDeck(rng, 1);
   const season = seasonFromTurn(1);
   const stage = stageLabel(safeStats);
-  const firstScene = getNextScene(deck, 0, stage, season, characterId);
+  const startScene = pickStartScene(rng, 1, characterId);
+  const firstScene = getNextScene(
+    deck,
+    0,
+    stage,
+    season,
+    characterId,
+    "early",
+    null,
+  );
   return {
     characterId,
     stats: safeStats,
+    pathScores: { craft: 0, service: 0, trade: 0, crime: 0 },
     turn: 1,
     log: [],
     sceneDeck: deck,
     sceneIndex: firstScene?.index ?? 0,
-    scene: firstScene?.scene ?? deck[0],
+    scene: startScene ?? firstScene?.scene ?? deck[0],
     eventDeck: eventDeck ?? shuffle(events, rng),
     eventIndex: 0,
+    nextEventTurn: 2 + Math.floor(rng() * 2),
     gameOver: false,
     endingReason: "",
+    majorEventUsed: false,
     effectType,
     effectUntilTurn,
     snowIntensity,
   };
+};
+
+const getPreferredPath = (pathScores: Record<Path, number>) => {
+  const entries = Object.entries(pathScores) as [Path, number][];
+  entries.sort((a, b) => b[1] - a[1]);
+  if (entries.length === 0) return null;
+  if (entries[0][1] === 0) return null;
+  return entries[0][0];
 };
 
 export const resolveChoice = (
@@ -121,6 +149,10 @@ export const resolveChoice = (
   rng: Rng,
 ): TurnResolution => {
   const safeStats = normalizeStats(state.stats);
+  const nextPathScores = { ...state.pathScores };
+  if (choice.path) {
+    nextPathScores[choice.path] += 1;
+  }
   const chance = getChance(choice, safeStats);
   const success = rng() < chance;
   const effects = success ? choice.success : choice.fail;
@@ -144,7 +176,15 @@ export const resolveChoice = (
   let eventResult: WorldEvent | undefined;
   let nextEventDeck = state.eventDeck;
   let nextEventIndex = state.eventIndex;
-  if (nextTurn % EVENT_EVERY_TURNS === 0) {
+  let nextEventTurn = state.nextEventTurn;
+  let majorEventUsed = state.majorEventUsed;
+  if (nextTurn >= 16 && nextTurn <= 19 && !majorEventUsed) {
+    const index = Math.floor(rng() * majorEvents.length);
+    eventResult = majorEvents[index] ?? majorEvents[0];
+    majorEventUsed = true;
+    nextStats = applyEffects(nextStats, eventResult.effects);
+    nextEventTurn = nextTurn + (rng() < 0.5 ? 2 : 3);
+  } else if (nextTurn >= nextEventTurn) {
     if (nextEventIndex >= nextEventDeck.length) {
       nextEventDeck = shuffle(events, rng);
       nextEventIndex = 0;
@@ -153,6 +193,7 @@ export const resolveChoice = (
     eventResult = currentEvent;
     nextStats = applyEffects(nextStats, currentEvent.effects);
     nextEventIndex += 1;
+    nextEventTurn = nextTurn + (rng() < 0.5 ? 2 : 3);
   }
 
   const beforeHunger = nextStats.hungerDebt;
@@ -267,6 +308,8 @@ export const resolveChoice = (
         nextStage,
         seasonFromTurn(nextTurn),
         state.characterId,
+        phaseFromTurn(nextTurn),
+        getPreferredPath(nextPathScores),
       );
   if (!lifeOver && !nextScenePick) {
     lifeOver = true;
@@ -291,6 +334,7 @@ export const resolveChoice = (
   const nextState: GameState = {
     characterId: state.characterId,
     stats: nextStats,
+    pathScores: nextPathScores,
     turn: nextTurn,
     log: nextLog,
     sceneDeck: state.sceneDeck,
@@ -298,8 +342,10 @@ export const resolveChoice = (
     scene: nextScene,
     eventDeck: nextEventDeck,
     eventIndex: nextEventIndex,
+    nextEventTurn,
     gameOver: lifeOver,
     endingReason,
+    majorEventUsed,
     effectType,
     effectUntilTurn,
     snowIntensity,

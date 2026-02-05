@@ -123,3 +123,36 @@ export const events: WorldEvent[] = [
     effects: { money: -1, fatigue: 1 },
   },
 ];
+
+export const majorEvents: WorldEvent[] = [
+  {
+    id: 'plague-wave',
+    title: 'Спалах чуми',
+    text: 'Хвороба накриває місто. Ліки дорогі, люди бояться контакту.',
+    effects: { health: -4, reputation: -1, money: -2, luck: -1 },
+  },
+  {
+    id: 'city-fire',
+    title: 'Велика пожежа',
+    text: 'Вогонь поширюється кварталами. Багато хто втрачає майно.',
+    effects: { money: -3, reputation: -1, health: -1 },
+  },
+  {
+    id: 'raiders',
+    title: 'Набіг',
+    text: 'Околиці грабують. Варта слабка, паніка зростає.',
+    effects: { money: -2, health: -2, reputation: -1 },
+  },
+  {
+    id: 'great-fair',
+    title: 'Великий ярмарок',
+    text: 'Місто оживає. Торгівля йде, можливості з’являються всюди.',
+    effects: { money: 4, reputation: 2, luck: 1 },
+  },
+  {
+    id: 'dragon-omen',
+    title: 'Драконячий знак',
+    text: 'Чутки про дракона лякають одних і дають шанс іншим.',
+    effects: { reputation: 1, luck: 2, health: -1 },
+  },
+];

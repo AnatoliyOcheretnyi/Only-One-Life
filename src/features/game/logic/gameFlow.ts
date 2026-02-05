@@ -1,8 +1,35 @@
 import { scenes } from "@/src/features/game/data/scenes";
-import type { Scene, Season, Stage, Stats } from "@/src/shared/types";
+import type { Path, Scene, ScenePhase, Season, Stage, Stats } from "@/src/shared/types";
 import { canUseStage, isSceneForSeason, shuffle } from "@/src/shared/utils";
 
-export const buildSceneDeck = (rng: () => number = Math.random) => {
+const phaseOrder: ScenePhase[] = ["early", "mid", "late"];
+
+export const phaseFromTurn = (turn: number): ScenePhase => {
+  if (turn <= 6) return "early";
+  if (turn <= 12) return "mid";
+  return "late";
+};
+
+export const pickStartScene = (
+  rng: () => number = Math.random,
+  arcId = 1,
+  characterId?: string | null,
+) => {
+  const candidates = scenes.filter(
+    (scene) =>
+      scene.arc === arcId &&
+      scene.phase === "start" &&
+      !scene.backlog &&
+      (!scene.forCharacter || scene.forCharacter.includes(characterId ?? "")),
+  );
+  if (candidates.length === 0) {
+    return scenes.find((scene) => scene.phase === "start") ?? scenes[0];
+  }
+  const index = Math.floor(rng() * candidates.length);
+  return candidates[index] ?? candidates[0];
+};
+
+export const buildSceneDeck = (rng: () => number = Math.random, arcId = 1) => {
   const buckets: Record<Stage, Scene[]> = {
     Early: [],
     Rising: [],
@@ -10,6 +37,9 @@ export const buildSceneDeck = (rng: () => number = Math.random) => {
     Noble: [],
   };
   scenes.forEach((scene) => {
+    if (scene.arc !== arcId) return;
+    if (scene.backlog) return;
+    if (scene.phase === "start") return;
     const stage = scene.minStage ?? "Early";
     buckets[stage].push(scene);
   });
@@ -27,25 +57,36 @@ export const getNextScene = (
   stage: Stage,
   season: Season,
   characterId?: string | null,
+  phase: ScenePhase = "early",
+  preferredPath?: Path | null,
 ) => {
   let fallback: { scene: Scene; index: number } | null = null;
-  for (let i = startIndex; i < deck.length; i += 1) {
-    const scene = deck[i];
-    if (
-      scene.forCharacter &&
-      characterId &&
-      !scene.forCharacter.includes(characterId)
-    ) {
-      continue;
-    }
-    if (!isSceneForSeason(scene.season, season)) {
-      continue;
-    }
-    if (!fallback) {
-      fallback = { scene, index: i };
-    }
-    if (!scene.minStage) return { scene, index: i };
-    if (canUseStage(stage, scene.minStage)) {
+  const preferredPhaseIndex = phaseOrder.indexOf(phase);
+  for (let pass = 0; pass < 2; pass += 1) {
+    for (let i = startIndex; i < deck.length; i += 1) {
+      const scene = deck[i];
+      if (
+        scene.forCharacter &&
+        characterId &&
+        !scene.forCharacter.includes(characterId)
+      ) {
+        continue;
+      }
+      if (!isSceneForSeason(scene.season, season)) {
+        continue;
+      }
+      if (scene.phase && phaseOrder.indexOf(scene.phase) > preferredPhaseIndex) {
+        continue;
+      }
+      if (!fallback) {
+        fallback = { scene, index: i };
+      }
+      if (scene.minStage && !canUseStage(stage, scene.minStage)) {
+        continue;
+      }
+      if (pass === 0 && preferredPath && scene.vector !== preferredPath) {
+        continue;
+      }
       return { scene, index: i };
     }
   }

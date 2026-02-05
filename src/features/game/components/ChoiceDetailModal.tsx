@@ -68,6 +68,7 @@ export default function ChoiceDetailModal({
             <Delta label="Здоровʼя" value={choice.success.health ?? 0} />
             <Delta label="Сімʼя" value={choice.success.family ?? 0} />
             <Delta label="Удача" value={choice.success.luck ?? 0} />
+            <Delta label="Карма" value={choice.success.karma ?? 0} />
             <ThemedText style={styles.resultText}>
               {choice.successText}
             </ThemedText>
@@ -92,10 +93,12 @@ export default function ChoiceDetailModal({
               <Delta label="Здоровʼя" value={choice.success.health ?? 0} />
               <Delta label="Сімʼя" value={choice.success.family ?? 0} />
               <Delta label="Удача" value={choice.success.luck ?? 0} />
+              <Delta label="Карма" value={choice.success.karma ?? 0} />
               <ThemedText style={styles.resultText}>
                 {choice.successText}
               </ThemedText>
             </View>
+            <View style={styles.resultDivider} />
             <View style={styles.deltaList}>
               <ThemedText
                 type="defaultSemiBold"
@@ -109,6 +112,7 @@ export default function ChoiceDetailModal({
               <Delta label="Здоровʼя" value={choice.fail.health ?? 0} />
               <Delta label="Сімʼя" value={choice.fail.family ?? 0} />
               <Delta label="Удача" value={choice.fail.luck ?? 0} />
+              <Delta label="Карма" value={choice.fail.karma ?? 0} />
               <ThemedText style={styles.resultText}>
                 {choice.failText}
               </ThemedText>

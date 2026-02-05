@@ -2,7 +2,6 @@ import type { Stage, Season, Stats } from './types';
 
 export const MAX_TURNS = 20;
 export const SEASON_TURNS = 5;
-export const EVENT_EVERY_TURNS = 3;
 export const BASE_UPKEEP = -1;
 export const MIN_HEALTH_FOR_FAMILY = 8;
 export const MIN_HEALTH_FOR_COMBAT = 6;
@@ -38,4 +37,5 @@ export const defaultStats: Stats = {
   hungerDebt: 0,
   fatigue: 0,
   luck: 0,
+  karma: 0,
 };

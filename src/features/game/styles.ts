@@ -281,9 +281,11 @@ export const styles = StyleSheet.create({
   deltaList: {
     gap: 6,
     paddingVertical: 6,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  resultDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    marginVertical: 8,
   },
   deltaRow: {
     flexDirection: 'row',

@@ -31,6 +31,7 @@ export const applyEffects = (stats: Stats, effects: Effects): Stats => ({
   hungerDebt: stats.hungerDebt + (effects.hungerDebt ?? 0),
   fatigue: stats.fatigue + (effects.fatigue ?? 0),
   luck: stats.luck + (effects.luck ?? 0),
+  karma: stats.karma + (effects.karma ?? 0),
 });
 
 export const shuffle = <T,>(items: T[], rng: () => number = Math.random) => {

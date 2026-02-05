@@ -38,8 +38,11 @@ export default function ResultModal({ result, onClose }: ResultModalProps) {
           <Delta label="Голод" value={result.deltas.hungerDebt ?? 0} />
           <Delta label="Втома" value={result.deltas.fatigue ?? 0} />
           <Delta label="Удача" value={result.deltas.luck ?? 0} />
+          <Delta label="Карма" value={result.deltas.karma ?? 0} />
         </View>
         {result.moneyBreakdown && result.moneyBreakdown.length > 0 ? (
+          <>
+            <View style={styles.resultDivider} />
           <View style={styles.deltaList}>
             <ThemedText type="defaultSemiBold" style={styles.modalSectionTitle}>
               Транзакції грошей
@@ -58,8 +61,11 @@ export default function ResultModal({ result, onClose }: ResultModalProps) {
               </View>
             ))}
           </View>
+          </>
         ) : null}
         {result.event ? (
+          <>
+            <View style={styles.resultDivider} />
           <View style={styles.eventBox}>
             <ThemedText type="defaultSemiBold" style={styles.eventTitle}>
               {result.event.title}
@@ -78,8 +84,10 @@ export default function ResultModal({ result, onClose }: ResultModalProps) {
               />
               <Delta label="Сімʼя" value={result.event.effects.family ?? 0} />
               <Delta label="Удача" value={result.event.effects.luck ?? 0} />
+              <Delta label="Карма" value={result.event.effects.karma ?? 0} />
             </View>
           </View>
+          </>
         ) : null}
         <Pressable onPress={onClose} style={styles.resultButton}>
           <ThemedText style={styles.resultButtonText}>Продовжити</ThemedText>

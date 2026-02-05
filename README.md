@@ -53,6 +53,9 @@ The goal is to make it feel alive using animations instead of heavy 3D:
 - [ ] Basic animations for transitions and outcomes
 - [ ] Save/load (local storage)
 - [ ] Expand paths (knight / lord / outlaw / monk / merchant…)
+- [ ] Keep design plans in PLANS.md
+
+See `PLANS.md` for detailed design notes and arc planning.
 
 ## 📌 Inspiration
 
