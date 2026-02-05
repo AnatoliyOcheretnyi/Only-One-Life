@@ -61,12 +61,16 @@ export const getNextScene = (
   characterId?: string | null,
   phase: ScenePhase = "early",
   preferredPath?: Path | null,
+  seenScenes?: Set<string>,
 ) => {
   let fallback: { scene: Scene; index: number } | null = null;
   const preferredPhaseIndex = phaseOrder.indexOf(phase);
   for (let pass = 0; pass < 2; pass += 1) {
     for (let i = startIndex; i < deck.length; i += 1) {
       const scene = deck[i];
+      if (seenScenes && seenScenes.has(scene.id)) {
+        continue;
+      }
       if (
         scene.forCharacter &&
         characterId &&
@@ -123,13 +127,33 @@ export const getNextScene = (
     }
   }
   if (fallback) return fallback;
-  if (deck.length > 0) {
-    return { scene: deck[0], index: 0 };
-  }
   return null;
 };
 
 export const getEnding = (stats: Stats, reason: string) => {
+  const repTone =
+    stats.reputation <= -5
+      ? "Люди ставляться до тебе з недовірою й страхом."
+      : stats.reputation <= -2
+      ? "Чутки про тебе ходять недобрі."
+      : stats.reputation >= 12
+      ? "Про тебе говорять із повагою."
+      : "";
+  const karmaTone =
+    stats.karma <= -5
+      ? "Ти пройшов слизькою стежкою, і це лишило тінь на твоєму імені."
+      : stats.karma <= -2
+      ? "Твої рішення були суворими й не завжди чесними."
+      : stats.karma >= 3
+      ? "Ти зберіг людяність навіть у складні часи."
+      : "";
+  const tone = [repTone, karmaTone].filter(Boolean).join(" ");
+  const toneKind =
+    stats.reputation <= -2 || stats.karma <= -2
+      ? "dark"
+      : stats.reputation >= 12 || stats.karma >= 3
+      ? "light"
+      : "neutral";
   if (stats.health <= 0) {
     return {
       title: "Смерть",
@@ -141,37 +165,37 @@ export const getEnding = (stats: Stats, reason: string) => {
     {
       key: "noble",
       title: "Феодал",
-      text: "Ти завершуєш життя впливовим феодалом із землею та владою.",
+      text: "Ти входиш у коло землевласників і керуєш справами з повагою та впливом.",
       min: { money: 60, reputation: 40 },
     },
     {
       key: "merchant",
       title: "Купець",
-      text: "Ти стаєш заможним купцем із власною справою.",
+      text: "Ти будуєш власну справу й стаєш знаним торговцем у місті.",
       min: { money: 30, reputation: 10 },
     },
     {
       key: "knight",
       title: "Лицар",
-      text: "Ти здобуваєш славу і завершуєш життя як лицар або воїн.",
+      text: "Ти здобуваєш славу й стаєш воїном, про якого говорять із повагою.",
       min: { skill: 12, reputation: 10 },
     },
     {
       key: "artisan",
       title: "Ремісник",
-      text: "Ти стаєш майстром своєї справи і знаходиш стабільність у ремеслі.",
+      text: "Ти стаєш майстром, до якого йдуть за якісною роботою.",
       min: { skill: 10, money: 12 },
     },
     {
       key: "guard",
       title: "Служака",
-      text: "Ти знаходиш своє місце у службі й живеш дисципліновано.",
+      text: "Ти знаходиш своє місце у службі та заробляєш довіру.",
       min: { skill: 9, reputation: 12 },
     },
     {
       key: "monk",
       title: "Монах",
-      text: "Ти відходиш від мирського й стаєш монахом.",
+      text: "Ти обираєш спокій і служіння, знаходячи сенс у тиші.",
       min: { reputation: 18, karma: 3 },
       max: { money: 8 },
     },
@@ -204,7 +228,7 @@ export const getEnding = (stats: Stats, reason: string) => {
     if (meetsRule(rule)) {
       return {
         title: rule.title,
-        text: `${reason} ${rule.text}`,
+        text: `${reason} ${rule.text}${tone ? ` ${tone}` : ""}`,
       };
     }
   }
@@ -216,24 +240,32 @@ export const getEnding = (stats: Stats, reason: string) => {
   if (nearRule) {
     return {
       title: `Майже ${nearRule.title}`,
-      text: `${reason} Ти був зовсім близько до ролі "${nearRule.title}". Ще трохи зусиль — і ти досяг би цієї мети.`,
+      text: `${reason} Ти був зовсім близько до ролі "${nearRule.title}". Ще трохи зусиль — і ти досяг би цієї мети.${tone ? ` ${tone}` : ""}`,
     };
   }
 
   if (stats.money <= 0 && stats.reputation <= 0) {
     return {
       title: "Бомж",
-      text: `${reason} Ти залишаєшся на самому дні, без статку й підтримки.`,
+      text: `${reason} Ти залишаєшся на самому дні, без статку й підтримки.${tone ? ` ${tone}` : ""}`,
     };
   }
   if (stats.money <= 3) {
+    const base =
+      toneKind === "dark"
+        ? "Ти виживаєш важкою працею, але твоє імʼя має тінь."
+        : "Ти виживаєш важкою працею, але багатства так і не здобуваєш.";
     return {
       title: "Бідняк",
-      text: `${reason} Ти виживаєш важкою працею, але багатства так і не здобуваєш.`,
+      text: `${reason} ${base}${tone ? ` ${tone}` : ""}`,
     };
   }
+  const peasantBase =
+    toneKind === "dark"
+      ? "Ти живеш скромно, але твоє минуле кидає тінь на спокій."
+      : "Ти живеш скромно, тримаючись простого життя.";
   return {
     title: "Селянин",
-    text: `${reason} Ти живеш скромно, тримаючись простого життя.`,
+    text: `${reason} ${peasantBase}${tone ? ` ${tone}` : ""}`,
   };
 };

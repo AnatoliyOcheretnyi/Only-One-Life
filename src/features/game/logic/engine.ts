@@ -37,6 +37,7 @@ export type GameState = {
   pathScores: Record<Path, number>;
   turn: number;
   log: string[];
+  seenScenes: string[];
   sceneDeck: Scene[];
   sceneIndex: number;
   scene: Scene;
@@ -116,15 +117,18 @@ export const createGameStateFromStats = ({
     "early",
     null,
   );
+  const initialScene = startScene ?? firstScene?.scene ?? deck[0];
+  const initialSeen = initialScene ? [initialScene.id] : [];
   return {
     characterId,
     stats: safeStats,
     pathScores: { craft: 0, service: 0, trade: 0, crime: 0 },
     turn: 1,
     log: [],
+    seenScenes: initialSeen,
     sceneDeck: deck,
     sceneIndex: startScene ? -1 : firstScene?.index ?? 0,
-    scene: startScene ?? firstScene?.scene ?? deck[0],
+    scene: initialScene,
     eventDeck: eventDeck ?? shuffle(events, rng),
     eventIndex: 0,
     nextEventTurn: 2 + Math.floor(rng() * 2),
@@ -298,9 +302,9 @@ export const resolveChoice = (
       endingReason =
         "Твоє здоровʼя впало до нуля через виснаження, травми та наслідки рішень.";
     }
-  } else if (nextTurn > MAX_TURNS) {
-    endingReason = "Твоє життя добігло кінця після повного циклу ходів.";
-  }
+    } else if (nextTurn > MAX_TURNS) {
+      endingReason = "Ти проходиш повний цикл подій і завершуєш цю главу гідно.";
+    }
 
     const nextScenePick = lifeOver
       ? null
@@ -314,11 +318,12 @@ export const resolveChoice = (
           state.characterId,
           phaseFromTurn(nextTurn),
           getPreferredPath(nextPathScores),
+          new Set(state.seenScenes),
         );
-  if (!lifeOver && !nextScenePick) {
-    lifeOver = true;
-    endingReason = "Ти пройшов усі 20 кроків життя.";
-  }
+    if (!lifeOver && !nextScenePick) {
+      lifeOver = true;
+      endingReason = "Ти доходиш до важливої межі й переходиш у новий етап життя.";
+    }
   const nextScene = nextScenePick?.scene ?? state.scene;
 
   if (eventResult?.effects.money) {
@@ -335,12 +340,19 @@ export const resolveChoice = (
     ...state.log,
   ].slice(0, 6);
 
+  const nextSeenScenes = nextScenePick?.scene
+    ? state.seenScenes.includes(nextScenePick.scene.id)
+      ? state.seenScenes
+      : [...state.seenScenes, nextScenePick.scene.id]
+    : state.seenScenes;
+
   const nextState: GameState = {
     characterId: state.characterId,
     stats: nextStats,
     pathScores: nextPathScores,
     turn: nextTurn,
     log: nextLog,
+    seenScenes: nextSeenScenes,
     sceneDeck: state.sceneDeck,
     sceneIndex: nextScenePick?.index ?? state.sceneIndex,
     scene: nextScene,
