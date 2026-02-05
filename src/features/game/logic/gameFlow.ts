@@ -56,6 +56,8 @@ export const getNextScene = (
   startIndex: number,
   stage: Stage,
   season: Season,
+  stats: Stats,
+  turn: number,
   characterId?: string | null,
   phase: ScenePhase = "early",
   preferredPath?: Path | null,
@@ -75,8 +77,30 @@ export const getNextScene = (
       if (!isSceneForSeason(scene.season, season)) {
         continue;
       }
-      if (scene.phase && phaseOrder.indexOf(scene.phase) > preferredPhaseIndex) {
+      if (
+        pass === 0 &&
+        scene.phase &&
+        phaseOrder.indexOf(scene.phase) > preferredPhaseIndex
+      ) {
         continue;
+      }
+      if (scene.minTurn && turn < scene.minTurn) {
+        continue;
+      }
+      if (scene.maxTurn && turn > scene.maxTurn) {
+        continue;
+      }
+      if (scene.minStats) {
+        const entries = Object.entries(scene.minStats) as [keyof Stats, number][];
+        if (entries.some(([key, value]) => stats[key] < value)) {
+          continue;
+        }
+      }
+      if (scene.maxStats) {
+        const entries = Object.entries(scene.maxStats) as [keyof Stats, number][];
+        if (entries.some(([key, value]) => stats[key] > value)) {
+          continue;
+        }
       }
       if (!fallback) {
         fallback = { scene, index: i };
@@ -87,10 +111,22 @@ export const getNextScene = (
       if (pass === 0 && preferredPath && scene.vector !== preferredPath) {
         continue;
       }
+      if (
+        preferredPath &&
+        scene.vector &&
+        scene.vector !== "neutral" &&
+        scene.vector !== preferredPath
+      ) {
+        continue;
+      }
       return { scene, index: i };
     }
   }
-  return fallback;
+  if (fallback) return fallback;
+  if (deck.length > 0) {
+    return { scene: deck[0], index: 0 };
+  }
+  return null;
 };
 
 export const getEnding = (stats: Stats, reason: string) => {
@@ -101,53 +137,103 @@ export const getEnding = (stats: Stats, reason: string) => {
     };
   }
 
-  if (stats.money >= 55 && stats.reputation >= 35) {
-    return {
+  const rules = [
+    {
+      key: "noble",
       title: "Феодал",
-      text: `${reason} Ти завершуєш життя впливовим феодалом із землею та владою.`,
-    };
-  }
-  if (stats.money >= 35 && stats.reputation >= 15) {
-    return {
+      text: "Ти завершуєш життя впливовим феодалом із землею та владою.",
+      min: { money: 60, reputation: 40 },
+    },
+    {
+      key: "merchant",
       title: "Купець",
-      text: `${reason} Ти стаєш заможним купцем із власною справою.`,
-    };
-  }
-  if (stats.skill >= 12 && stats.reputation >= 12) {
-    return {
+      text: "Ти стаєш заможним купцем із власною справою.",
+      min: { money: 30, reputation: 10 },
+    },
+    {
+      key: "knight",
       title: "Лицар",
-      text: `${reason} Ти здобуваєш славу і завершуєш життя як лицар або воїн.`,
-    };
-  }
-  if (stats.reputation >= 18 && stats.money <= 10) {
-    return {
+      text: "Ти здобуваєш славу і завершуєш життя як лицар або воїн.",
+      min: { skill: 12, reputation: 10 },
+    },
+    {
+      key: "artisan",
+      title: "Ремісник",
+      text: "Ти стаєш майстром своєї справи і знаходиш стабільність у ремеслі.",
+      min: { skill: 10, money: 12 },
+    },
+    {
+      key: "guard",
+      title: "Служака",
+      text: "Ти знаходиш своє місце у службі й живеш дисципліновано.",
+      min: { skill: 9, reputation: 12 },
+    },
+    {
+      key: "monk",
       title: "Монах",
-      text: `${reason} Ти відходиш від мирського й стаєш монахом.`,
+      text: "Ти відходиш від мирського й стаєш монахом.",
+      min: { reputation: 18, karma: 3 },
+      max: { money: 8 },
+    },
+  ] as const;
+
+  const missingScore = (
+    req: { min?: Record<string, number>; max?: Record<string, number> },
+  ) => {
+    let missing = 0;
+    if (req.min) {
+      for (const [k, v] of Object.entries(req.min)) {
+        const value = (stats as Record<string, number>)[k] ?? 0;
+        if (value < v) missing += v - value;
+      }
+    }
+    if (req.max) {
+      for (const [k, v] of Object.entries(req.max)) {
+        const value = (stats as Record<string, number>)[k] ?? 0;
+        if (value > v) missing += value - v;
+      }
+    }
+    return missing;
+  };
+
+  const meetsRule = (
+    req: { min?: Record<string, number>; max?: Record<string, number> },
+  ) => missingScore(req) === 0;
+
+  for (const rule of rules) {
+    if (meetsRule(rule)) {
+      return {
+        title: rule.title,
+        text: `${reason} ${rule.text}`,
+      };
+    }
+  }
+
+  const nearRule = rules.find((rule) => {
+    const missing = missingScore(rule);
+    return missing > 0 && missing <= 2;
+  });
+  if (nearRule) {
+    return {
+      title: `Майже ${nearRule.title}`,
+      text: `${reason} Ти був зовсім близько до ролі "${nearRule.title}". Ще трохи зусиль — і ти досяг би цієї мети.`,
     };
   }
 
-  const best = Math.max(stats.money, stats.skill, stats.reputation);
-  if (best === stats.money) {
+  if (stats.money <= 0 && stats.reputation <= 0) {
     return {
-      title: "Купець",
-      text: `${reason} Ти йдеш шляхом торгівлі й стаєш купцем.`,
+      title: "Бомж",
+      text: `${reason} Ти залишаєшся на самому дні, без статку й підтримки.`,
     };
   }
-  if (best === stats.skill) {
+  if (stats.money <= 3) {
     return {
-      title: "Лицар",
-      text: `${reason} Твоя сила веде тебе шляхом воїна.`,
+      title: "Бідняк",
+      text: `${reason} Ти виживаєш важкою працею, але багатства так і не здобуваєш.`,
     };
   }
-  if (best === stats.reputation) {
-    return {
-      title: "Монах",
-      text: `${reason} Ти обираєш служіння й тишу.`,
-    };
-  }
-
   return {
-    title: "Смерть",
-    text: `${reason} Ти помираєш бідним і майже забутим.`,
+    title: "Селянин",
+    text: `${reason} Ти живеш скромно, тримаючись простого життя.`,
   };
 };

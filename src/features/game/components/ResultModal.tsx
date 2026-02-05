@@ -40,29 +40,6 @@ export default function ResultModal({ result, onClose }: ResultModalProps) {
           <Delta label="Удача" value={result.deltas.luck ?? 0} />
           <Delta label="Карма" value={result.deltas.karma ?? 0} />
         </View>
-        {result.moneyBreakdown && result.moneyBreakdown.length > 0 ? (
-          <>
-            <View style={styles.resultDivider} />
-          <View style={styles.deltaList}>
-            <ThemedText type="defaultSemiBold" style={styles.modalSectionTitle}>
-              Транзакції грошей
-            </ThemedText>
-            {result.moneyBreakdown.map((item) => (
-              <View key={item.label} style={styles.deltaRow}>
-                <ThemedText style={styles.deltaLabel}>{item.label}</ThemedText>
-                <ThemedText
-                  style={
-                    item.value >= 0 ? styles.deltaPositive : styles.deltaNegative
-                  }
-                >
-                  {item.value > 0 ? "+" : ""}
-                  {item.value}
-                </ThemedText>
-              </View>
-            ))}
-          </View>
-          </>
-        ) : null}
         {result.event ? (
           <>
             <View style={styles.resultDivider} />
@@ -86,6 +63,29 @@ export default function ResultModal({ result, onClose }: ResultModalProps) {
               <Delta label="Удача" value={result.event.effects.luck ?? 0} />
               <Delta label="Карма" value={result.event.effects.karma ?? 0} />
             </View>
+          </View>
+          </>
+        ) : null}
+        {result.moneyBreakdown && result.moneyBreakdown.length > 0 ? (
+          <>
+            <View style={styles.resultDivider} />
+          <View style={styles.deltaList}>
+            <ThemedText type="defaultSemiBold" style={styles.modalSectionTitle}>
+              Транзакції грошей
+            </ThemedText>
+            {result.moneyBreakdown.map((item) => (
+              <View key={item.label} style={styles.deltaRow}>
+                <ThemedText style={styles.deltaLabel}>{item.label}</ThemedText>
+                <ThemedText
+                  style={
+                    item.value >= 0 ? styles.deltaPositive : styles.deltaNegative
+                  }
+                >
+                  {item.value > 0 ? "+" : ""}
+                  {item.value}
+                </ThemedText>
+              </View>
+            ))}
           </View>
           </>
         ) : null}

@@ -40,6 +40,8 @@ export type Scene = {
   backlog?: boolean;
   minTurn?: number;
   maxTurn?: number;
+  minStats?: Partial<Stats>;
+  maxStats?: Partial<Stats>;
   minStage?: Stage;
   season?: Season | Season[];
   forCharacter?: string[];

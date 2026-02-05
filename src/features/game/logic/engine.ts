@@ -110,6 +110,8 @@ export const createGameStateFromStats = ({
     0,
     stage,
     season,
+    safeStats,
+    1,
     characterId,
     "early",
     null,
@@ -121,7 +123,7 @@ export const createGameStateFromStats = ({
     turn: 1,
     log: [],
     sceneDeck: deck,
-    sceneIndex: firstScene?.index ?? 0,
+    sceneIndex: startScene ? -1 : firstScene?.index ?? 0,
     scene: startScene ?? firstScene?.scene ?? deck[0],
     eventDeck: eventDeck ?? shuffle(events, rng),
     eventIndex: 0,
@@ -209,12 +211,12 @@ export const resolveChoice = (
     });
   }
   moneyBreakdown.push({ label: "Утримання", value: upkeep });
-  if (nextStats.money <= 0) {
-    nextStats.hungerDebt += 1;
-    hungerDelta = 1;
-    hungerHealthLoss = nextStats.hungerDebt;
-    nextStats.health -= hungerHealthLoss;
-    resultLine += `, голод -${hungerHealthLoss}`;
+    if (nextStats.money <= 0) {
+      nextStats.hungerDebt += 1;
+      hungerDelta = 1;
+      hungerHealthLoss = Math.max(1, Math.ceil(nextStats.hungerDebt / 2));
+      nextStats.health -= hungerHealthLoss;
+      resultLine += `, голод -${hungerHealthLoss}`;
   } else if (nextStats.hungerDebt > 0) {
     const pay = Math.min(nextStats.money, nextStats.hungerDebt);
     nextStats.money -= pay;
@@ -300,17 +302,19 @@ export const resolveChoice = (
     endingReason = "Твоє життя добігло кінця після повного циклу ходів.";
   }
 
-  const nextScenePick = lifeOver
-    ? null
-    : getNextScene(
-        state.sceneDeck,
-        state.sceneIndex + 1,
-        nextStage,
-        seasonFromTurn(nextTurn),
-        state.characterId,
-        phaseFromTurn(nextTurn),
-        getPreferredPath(nextPathScores),
-      );
+    const nextScenePick = lifeOver
+      ? null
+      : getNextScene(
+          state.sceneDeck,
+          state.sceneIndex + 1,
+          nextStage,
+          seasonFromTurn(nextTurn),
+          nextStats,
+          nextTurn,
+          state.characterId,
+          phaseFromTurn(nextTurn),
+          getPreferredPath(nextPathScores),
+        );
   if (!lifeOver && !nextScenePick) {
     lifeOver = true;
     endingReason = "Ти пройшов усі 20 кроків життя.";

@@ -48,13 +48,24 @@ export default function ChoiceDetailModal({
           <ThemedText style={styles.resultText}>{choice.description}</ThemedText>
         </View>
         {!neutral ? (
-          <ThemedText style={styles.choiceChance}>Шанс: ~{chance}%</ThemedText>
+          <ThemedText
+            style={[styles.choiceChance, styles.choiceChanceTight]}
+          >
+            Шанс: ~{chance}%
+          </ThemedText>
         ) : (
-          <ThemedText style={styles.choiceChance}>Без ризику</ThemedText>
+          <ThemedText
+            style={[styles.choiceChance, styles.choiceChanceTight]}
+          >
+            Без ризику
+          </ThemedText>
         )}
         {neutral ? (
-          <View style={styles.deltaList}>
-            <ThemedText type="defaultSemiBold" style={styles.modalSectionTitle}>
+          <View style={styles.deltaListTight}>
+            <ThemedText
+              type="defaultSemiBold"
+              style={[styles.modalSectionTitle, styles.modalSectionTitleTight]}
+            >
               Без ризику
             </ThemedText>
             {choice.minHealth ? (
@@ -75,10 +86,10 @@ export default function ChoiceDetailModal({
           </View>
         ) : (
           <>
-            <View style={styles.deltaList}>
+            <View style={styles.deltaListTight}>
               <ThemedText
                 type="defaultSemiBold"
-                style={styles.modalSectionTitle}
+                style={[styles.modalSectionTitle, styles.modalSectionTitleTight]}
               >
                 Успіх
               </ThemedText>
@@ -99,10 +110,10 @@ export default function ChoiceDetailModal({
               </ThemedText>
             </View>
             <View style={styles.resultDivider} />
-            <View style={styles.deltaList}>
+            <View style={styles.deltaListTight}>
               <ThemedText
                 type="defaultSemiBold"
-                style={styles.modalSectionTitle}
+                style={[styles.modalSectionTitle, styles.modalSectionTitleTight]}
               >
                 Невдача
               </ThemedText>

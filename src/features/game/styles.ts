@@ -259,12 +259,12 @@ export const styles = StyleSheet.create({
   },
   resultCard: {
     width: '100%',
-    padding: 20,
+    padding: 16,
     borderRadius: 18,
     backgroundColor: '#15120E',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.16)',
-    gap: 14,
+    gap: 8,
   },
   resultHeader: {
     gap: 6,
@@ -275,17 +275,31 @@ export const styles = StyleSheet.create({
   modalSectionTitle: {
     color: '#F2DFC0',
   },
+  modalSectionTitleTight: {
+    marginTop: 0,
+    marginBottom: 0,
+  },
   resultText: {
     color: 'rgba(255,255,255,0.85)',
   },
   deltaList: {
-    gap: 6,
-    paddingVertical: 6,
+    gap: 4,
+    paddingTop: 2,
+    paddingBottom: 4,
+  },
+  deltaListTight: {
+    gap: 3,
+    paddingTop: 0,
+    paddingBottom: 2,
+  },
+  choiceChanceTight: {
+    marginTop: -2,
+    marginBottom: 0,
   },
   resultDivider: {
     height: 1,
     backgroundColor: 'rgba(255,255,255,0.08)',
-    marginVertical: 8,
+    marginVertical: 6,
   },
   deltaRow: {
     flexDirection: 'row',
